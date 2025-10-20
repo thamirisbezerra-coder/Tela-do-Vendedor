@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tela do Vendedor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f0f4f8;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="access-view" class="grid place-items-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 w-full max-w-md p-8 text-center">
+            <div class="mb-8">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-20 w-20 text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <h1 class="text-2xl font-bold text-gray-800">Olá, vendedor(a) Doremus!</h1>
+                <p class="text-gray-600 mt-2">Chegou o seu painel de feedbacks de amostras. Colabore conosco para continuarmos atendendo da melhor forma :)</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label for="session-id-input" class="block text-sm font-medium text-gray-700 mb-1 text-left">ID da Sessão</label>
+                    <input type="text" id="session-id-input" placeholder="Cole o ID da sessão aqui" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3">
+                </div>
+                <div>
+                    <label for="seller-name-input" class="block text-sm font-medium text-gray-700 mb-1 text-left">O seu Nome de Vendedor</label>
+                    <input type="text" id="seller-name-input" placeholder="Escreva seu nome igual ao anexo no e-mail" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3">
+                </div>
+                <div>
+                    <label for="access-code-input" class="block text-sm font-medium text-gray-700 mb-1 text-left">Código de Acesso</label>
+                    <input type="text" id="access-code-input" placeholder="Insira o código de 6 dígitos" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3">
+                </div>
+            </div>
+            <button id="load-data-btn" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-all">Aceder Amostras</button>
+            <p id="access-error" class="text-red-500 text-sm mt-3 h-4 text-center"></p>
+            <p class="text-xs text-gray-400 mt-8">Doremus, 2025</p>
+        </div>
+    </div>
+
+    <div id="loading-state" class="hidden flex flex-col items-center justify-center min-h-screen text-center">
+        <h1 class="text-2xl font-bold text-gray-700">A carregar as suas amostras...</h1>
+    </div>
+
+    <div id="main-content" class="hidden flex items-center justify-center min-h-screen p-4">
+        <div class="w-full max-w-5xl">
+            <header class="mb-8 text-center">
+                <h1 id="welcome-title" class="text-3xl font-bold text-gray-800">Olá!</h1>
+                <p class="text-gray-600 mt-2">Este é o seu painel para gestão de feedbacks de amostras.</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-200">
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Como Funciona?</h3>
+                    <ol class="list-decimal list-inside text-sm text-gray-600 space-y-1">
+                        <li>Expanda um pedido para ver as amostras.</li>
+                        <li>Clique em <strong>"Atualizar"</strong> na amostra desejada.</li>
+                        <li>Selecione uma opção de feedback e escreva a observação.</li>
+                        <li>Quando todas as amostras de um pedido forem respondidas, clique em <strong>"Sinalizar Gestor"</strong> para o notificar.</li>
+                    </ol>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Dúvidas?</h3>
+                    <p class="text-sm text-gray-600">Se encontrar algum problema ou tiver alguma questão sobre o preenchimento, não hesite em me contatar.</p>
+                    <p class="text-sm text-gray-600 mt-2">Pode me chamar no <strong>chat</strong> ou enviar um <strong>e-mail</strong>.</p>
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <p class="text-sm font-semibold text-gray-800">Thamiris Bezerra</p>
+                        <p class="text-sm text-gray-600">thamiris.bezerra@doremus.com.br</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pending-section" class="hidden">
+                <h2 id="pending-orders-count" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+                <div id="pending-orders-list" class="space-y-4"></div>
+            </div>
+
+            <div id="completed-section" class="mt-12 hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Pedidos Concluídos e Sinalizados</h2>
+                <div id="completed-orders-list" class="space-y-4"></div>
+            </div>
+            
+            <div id="no-data-message" class="hidden text-center bg-white p-8 rounded-2xl shadow-sm border">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                 <h2 class="mt-4 text-2xl font-bold text-gray-800">Nenhuma amostra encontrada.</h2>
+                 <p class="mt-2 text-gray-600">Verifique se os dados de acesso estão corretos.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="feedback-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 class="text-2xl font-bold mb-4" id="modal-title">Atualizar Feedback</h3>
+            <p class="text-gray-600 mb-2">Selecione uma das opções abaixo para a amostra:</p>
+            <p class="font-semibold text-gray-800 mb-6" id="modal-sample-info"></p>
+
+            <div id="feedback-options" class="grid grid-cols-2 gap-3 mb-6"></div>
+            
+            <div>
+                <label for="observation" class="block text-sm font-medium text-gray-700 mb-2">Observação (Obrigatório)</label>
+                <textarea id="observation" rows="3" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Justifique o motivo do feedback..."></textarea>
+            </div>
+
+            <div class="mt-8 flex justify-end space-x-3">
+                <button id="cancel-modal-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-5 rounded-lg">Cancelar</button>
+                <button id="save-button" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF_TE28Tbp2nakBGTva1yEEbBCqWvRdJQ",
+            authDomain: "feedback-vendedores.firebaseapp.com",
+            projectId: "feedback-vendedores",
+            storageBucket: "feedback-vendedores.firebasestorage.app",
+            messagingSenderId: "650880422749",
+            appId: "1:650880422749:web:54a258964a6ca8db180eb4",
+            measurementId: "G-TG588KDK0C"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        const FEEDBACK_CHOICES = ['APRESENTAÇÃO PRÓ ATIVA', 'CALIBRE', 'EXTRAVIADA', 'FORA DA ESPECIFICAÇÃO DO CLIENTE', 'FORA DO PERFIL DO CLIENTE', 'FRACA / ESTOURANDO / COM CHUVEIRO', 'PRODUTO DESCONTINUADO', 'QUANTIDADE INSUFICIENTE', 'REPRESENTAÇÃO / DISTRIBUIDOR', 'SEM RETORNO DO CLIENTE', 'INNOVATION / EVENTOS', 'EXPORTACAO'];
+
+        const accessView = document.getElementById('access-view');
+        const loadingState = document.getElementById('loading-state');
+        const mainContent = document.getElementById('main-content');
+        const loadDataBtn = document.getElementById('load-data-btn');
+        const accessError = document.getElementById('access-error');
+        const noDataMessage = document.getElementById('no-data-message');
+        const welcomeTitle = document.getElementById('welcome-title');
+        
+        let currentSample = null;
+        let selectedFeedback = null;
+        let currentSellerDocRef = null;
+        let allSellerSamples = [];
+        let unsubscribe = null;
+
+        const normalizeText = (text = '') => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+        const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
+
+        loadDataBtn.addEventListener('click', async () => {
+            let sessionId = document.getElementById('session-id-input').value.trim();
+            const sellerName = document.getElementById('seller-name-input').value.trim();
+            const accessCode = document.getElementById('access-code-input').value.trim();
+
+            if (!sessionId || !sellerName || !accessCode) {
+                accessError.textContent = 'Todos os campos são obrigatórios.';
+                return;
+            }
+
+            if (!sessionId.startsWith('sessao_')) {
+                sessionId = `sessao_${sessionId}`;
+            }
+            const sellerId = sanitizeForFirebaseId(sellerName);
+
+            try {
+                await signInAnonymously(auth);
+                const docRef = doc(db, "sessoes", sessionId, "vendedores", sellerId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists() && docSnap.data().accessCode === accessCode) {
+                    currentSellerDocRef = docRef;
+                    welcomeTitle.textContent = `Olá, ${docSnap.data().originalName}!`;
+                    accessError.textContent = '';
+                    
+                    accessView.classList.add('hidden');
+                    loadingState.classList.remove('hidden');
+                    
+                    startRealtimeListener();
+                } else if (docSnap.exists()) {
+                    accessError.textContent = 'Código de Acesso inválido. Tente novamente.';
+                } else {
+                    accessError.textContent = 'Sessão ou Vendedor não encontrado. Verifique os dados.';
+                }
+            } catch (e) {
+                accessError.textContent = 'Erro ao conectar. Verifique sua internet.';
+                console.error("Erro de autenticação ou busca:", e);
+            }
+        });
+
+        function startRealtimeListener() {
+            if (unsubscribe) unsubscribe();
+            unsubscribe = onSnapshot(currentSellerDocRef, (doc) => {
+                loadingState.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                
+                const sellerData = doc.data();
+                allSellerSamples = sellerData.amostras || [];
+
+                if (allSellerSamples.length === 0) {
+                    noDataMessage.classList.remove('hidden');
+                    document.getElementById('pending-section').classList.add('hidden');
+                    document.getElementById('completed-section').classList.add('hidden');
+                    return;
+                }
+                noDataMessage.classList.add('hidden');
+
+                const pendingSamples = allSellerSamples.filter(s => !s.finalizedByVendor);
+                const completedSamples = allSellerSamples.filter(s => s.finalizedByVendor);
+                
+                renderOrders(pendingSamples, 'pending');
+                renderOrders(completedSamples, 'completed');
+            }, (error) => {
+                console.error("Erro no listener do Firebase:", error);
+                loadingState.innerHTML = `<h1 class="text-2xl font-bold text-red-600">Erro de conexão.</h1><p class="mt-2">Tente recarregar a página.</p>`;
+            });
+        }
+            
+        function renderOrders(samples, type) {
+            const isPendingSection = type === 'pending';
+            const container = document.getElementById(`${type}-orders-list`);
+            const section = document.getElementById(`${type}-section`);
+
+            if (samples.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+            
+            section.classList.remove('hidden');
+            container.innerHTML = '';
+            
+            const groupedByOrder = samples.reduce((acc, sample) => {
+                const key = sample.pedido;
+                if (!acc[key]) acc[key] = { ...sample, samples: [] };
+                acc[key].samples.push(sample);
+                return acc;
+            }, {});
+
+            if(isPendingSection) document.getElementById('pending-orders-count').textContent = `${Object.keys(groupedByOrder).length} Pedido(s) com Pendências`;
+
+            Object.values(groupedByOrder).forEach(order => {
+                const orderGroup = document.createElement('div');
+                const allSamplesInOrderAnswered = order.samples.every(s => !s.isPending);
+                const statusColor = isPendingSection ? 'yellow' : 'green';
+                orderGroup.className = `bg-white rounded-2xl shadow-sm border-l-4 border-${statusColor}-400`;
+                
+                const samplesTableRowsHTML = order.samples.map(sample => `
+                    <tr class="border-b last:border-b-0">
+                        <td class="p-3">${sample.produto}</td>
+                        <td class="p-3 hidden md:table-cell">${sample.originalStatus}</td>
+                        <td class="p-3 font-semibold">${sample.isPending ? '<span class="text-gray-500">Pendente</span>' : `<div>${sample.feedback}</div><div class='text-gray-500 font-normal text-xs'>${sample.observation}</div>`}</td>
+                        <td class="p-3 text-right space-x-2">
+                            <button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${sample.isPending ? 'Atualizar' : 'Editar'}</button>
+                            ${!sample.isPending ? `<button class="delete-btn bg-red-100 text-red-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-red-200" data-sample-id='${sample.id}'>Excluir</button>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+
+                orderGroup.innerHTML = `
+                    <div class="p-4 flex justify-between items-center">
+                        <h3 class="font-bold text-lg flex items-center"><span class="w-3 h-3 bg-${statusColor}-400 rounded-full mr-3"></span>${order.pedido} - ${order.razaoSocial}</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-gray-50 text-left">
+                                <tr>
+                                    <th class="p-3 font-medium text-gray-500">Produto</th>
+                                    <th class="p-3 font-medium text-gray-500 hidden md:table-cell">Status Original</th>
+                                    <th class="p-3 font-medium text-gray-500">Feedback</th>
+                                    <th class="p-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody>${samplesTableRowsHTML}</tbody>
+                        </table>
+                    </div>
+                    ${isPendingSection && allSamplesInOrderAnswered ? `
+                    <div class="p-4 border-t text-right bg-green-50">
+                        <p class="text-sm text-gray-700 text-left mb-2">Todas as amostras deste pedido foram respondidas. Clique abaixo para notificar o gestor.</p>
+                        <button class="signal-manager-btn bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-sm" data-order-id="${order.pedido}">&#10003; Sinalizar Gestor</button>
+                    </div>` : ''}
+                `;
+                
+                container.appendChild(orderGroup);
+            });
+
+            container.querySelectorAll('.update-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const sampleToUpdate = allSellerSamples.find(s => s.id === btn.dataset.sampleId);
+                    if(sampleToUpdate) openModal(sampleToUpdate);
+                });
+            });
+            container.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const sampleId = e.currentTarget.dataset.sampleId;
+                    e.currentTarget.disabled = true;
+                    updateSampleData(sampleId, { isPending: true, feedback: '', observation: '' });
+                });
+            });
+             container.querySelectorAll('.signal-manager-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const orderId = e.currentTarget.dataset.orderId;
+                    e.currentTarget.disabled = true;
+                    e.currentTarget.textContent = 'Sinalizado!';
+                    
+                    const updatedSamples = allSellerSamples.map(sample => {
+                        if (sample.pedido === orderId) {
+                            return { ...sample, finalizedByVendor: true };
+                        }
+                        return sample;
+                    });
+                    await updateDoc(currentSellerDocRef, { amostras: updatedSamples });
+                });
+            });
+        }
+        
+        function openModal(sample) {
+            currentSample = sample;
+            selectedFeedback = sample.feedback || null;
+            const observationInput = document.getElementById('observation');
+            observationInput.value = sample.observation || '';
+            document.getElementById('modal-sample-info').textContent = `${sample.produto} - ${sample.descricao}`;
+            
+            const feedbackOptionsContainer = document.getElementById('feedback-options');
+            feedbackOptionsContainer.innerHTML = '';
+            FEEDBACK_CHOICES.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice;
+                button.dataset.feedback = choice;
+                button.className = 'feedback-choice-btn border border-gray-300 text-gray-700 text-sm font-semibold py-2 px-2 rounded-lg hover:bg-gray-100 transition-all';
+                if(choice === selectedFeedback) button.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                feedbackOptionsContainer.appendChild(button);
+            });
+            
+            validateForm();
+            document.getElementById('feedback-modal').classList.remove('hidden');
+        }
+
+        document.getElementById('feedback-options').addEventListener('click', (e) => {
+            if (e.target.classList.contains('feedback-choice-btn')) {
+                document.querySelectorAll('.feedback-choice-btn').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600'));
+                e.target.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                selectedFeedback = e.target.dataset.feedback;
+                validateForm();
+            }
+        });
+
+        function closeModal() { document.getElementById('feedback-modal').classList.add('hidden'); }
+        function validateForm() {
+            const saveButton = document.getElementById('save-button');
+            saveButton.disabled = !document.getElementById('observation').value.trim() || !selectedFeedback;
+        }
+        
+        document.getElementById('cancel-modal-btn').addEventListener('click', closeModal);
+        document.getElementById('observation').addEventListener('input', validateForm);
+        
+        document.getElementById('save-button').addEventListener('click', () => {
+            if (document.getElementById('save-button').disabled) return;
+            
+            const updates = {
+                isPending: false,
+                feedback: selectedFeedback,
+                observation: document.getElementById('observation').value.trim(),
+                editedAfterCompletion: !currentSample.isPending
+            };
+
+            closeModal();
+            updateSampleData(currentSample.id, updates);
+        });
+
+        async function updateSampleData(sampleId, updates) {
+            try {
+                const updatedSamples = allSellerSamples.map(sample => {
+                    if (sample.id === sampleId) {
+                        return { ...sample, ...updates };
+                    }
+                    return sample;
+                });
+                await updateDoc(currentSellerDocRef, { amostras: updatedSamples });
+            } catch (error) {
+                console.error("Falha ao atualizar a amostra:", error);
+                alert("Não foi possível guardar o feedback. A sua tela pode estar dessincronizada. Tente recarregar a página.");
+            }
+        }
+    </script>
+</body>
+</html>
+
