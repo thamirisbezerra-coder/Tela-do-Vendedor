@@ -47,14 +47,15 @@
     </div>
 
     <div id="loading-state" class="hidden flex flex-col items-center justify-center min-h-screen text-center">
-        <h1 class="text-2xl font-bold text-gray-700">A carregar as suas amostras...</h1>
+        <h1 id="loading-message" class="text-2xl font-bold text-gray-700">A carregar as suas amostras...</h1>
     </div>
 
     <div id="main-content" class="hidden flex items-center justify-center min-h-screen p-4">
         <div class="w-full max-w-5xl">
-            <header class="mb-8 text-center">
+            <header class="mb-8 text-center relative">
                 <h1 id="welcome-title" class="text-3xl font-bold text-gray-800">Olá!</h1>
                 <p class="text-gray-600 mt-2">Este é o seu painel para gestão de feedbacks de amostras.</p>
+                <button id="logout-btn" class="absolute top-0 right-0 bg-red-500 text-white font-semibold py-1 px-3 rounded-lg text-sm hover:bg-red-600 transition-colors">Sair</button>
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -139,8 +140,10 @@
 
         const accessView = document.getElementById('access-view');
         const loadingState = document.getElementById('loading-state');
+        const loadingMessage = document.getElementById('loading-message');
         const mainContent = document.getElementById('main-content');
         const loadDataBtn = document.getElementById('load-data-btn');
+        const logoutBtn = document.getElementById('logout-btn');
         const accessError = document.getElementById('access-error');
         const noDataMessage = document.getElementById('no-data-message');
         const welcomeTitle = document.getElementById('welcome-title');
@@ -154,14 +157,10 @@
         const normalizeText = (text = '') => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
         const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
 
-        loadDataBtn.addEventListener('click', async () => {
-            let sessionId = document.getElementById('session-id-input').value.trim();
-            const sellerName = document.getElementById('seller-name-input').value.trim();
-            const accessCode = document.getElementById('access-code-input').value.trim();
-
+        async function attemptLogin(sessionId, sellerName, accessCode, isAutoLogin = false) {
             if (!sessionId || !sellerName || !accessCode) {
-                accessError.textContent = 'Todos os campos são obrigatórios.';
-                return;
+                if (!isAutoLogin) accessError.textContent = 'Todos os campos são obrigatórios.';
+                return false;
             }
 
             if (!sessionId.startsWith('sessao_')) {
@@ -170,28 +169,58 @@
             const sellerId = sanitizeForFirebaseId(sellerName);
 
             try {
-                await signInAnonymously(auth);
                 const docRef = doc(db, "sessoes", sessionId, "vendedores", sellerId);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists() && docSnap.data().accessCode === accessCode) {
                     currentSellerDocRef = docRef;
                     welcomeTitle.textContent = `Olá, ${docSnap.data().originalName}!`;
-                    accessError.textContent = '';
                     
+                    if (!isAutoLogin) {
+                        localStorage.setItem('sellerSessionId', sessionId);
+                        localStorage.setItem('sellerName', sellerName);
+                        localStorage.setItem('sellerAccessCode', accessCode);
+                    }
+                    
+                    accessError.textContent = '';
                     accessView.classList.add('hidden');
                     loadingState.classList.remove('hidden');
                     
                     startRealtimeListener();
-                } else if (docSnap.exists()) {
-                    accessError.textContent = 'Código de Acesso inválido. Tente novamente.';
+                    return true;
                 } else {
-                    accessError.textContent = 'Sessão ou Vendedor não encontrado. Verifique os dados.';
+                    if (isAutoLogin) {
+                        // Saved credentials are bad, clear them and show login form
+                        localStorage.clear();
+                        loadingState.classList.add('hidden');
+                        accessView.classList.remove('hidden');
+                    } else if (docSnap.exists()) {
+                        accessError.textContent = 'Código de Acesso inválido. Tente novamente.';
+                    } else {
+                        accessError.textContent = 'Sessão ou Vendedor não encontrado. Verifique os dados.';
+                    }
+                    return false;
                 }
             } catch (e) {
-                accessError.textContent = 'Erro ao conectar. Verifique sua internet.';
+                if (!isAutoLogin) accessError.textContent = 'Erro ao conectar. Verifique sua internet.';
                 console.error("Erro de autenticação ou busca:", e);
+                return false;
             }
+        }
+        
+        loadDataBtn.addEventListener('click', () => {
+            const sessionId = document.getElementById('session-id-input').value.trim();
+            const sellerName = document.getElementById('seller-name-input').value.trim();
+            const accessCode = document.getElementById('access-code-input').value.trim();
+            attemptLogin(sessionId, sellerName, accessCode);
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('sellerSessionId');
+            localStorage.removeItem('sellerName');
+            localStorage.removeItem('sellerAccessCode');
+            if(unsubscribe) unsubscribe();
+            window.location.reload();
         });
 
         function startRealtimeListener() {
@@ -387,7 +416,33 @@
                 alert("Não foi possível guardar o feedback. A sua tela pode estar dessincronizada. Tente recarregar a página.");
             }
         }
+        
+        // Check for saved login on page load
+        (async () => {
+            try {
+                await signInAnonymously(auth);
+                const savedSessionId = localStorage.getItem('sellerSessionId');
+                const savedSellerName = localStorage.getItem('sellerName');
+                const savedAccessCode = localStorage.getItem('sellerAccessCode');
+
+                if (savedSessionId && savedSellerName && savedAccessCode) {
+                    loadingMessage.textContent = 'A verificar sessão guardada...';
+                    accessView.classList.add('hidden');
+                    loadingState.classList.remove('hidden');
+                    await attemptLogin(savedSessionId, savedSellerName, savedAccessCode, true);
+                } else {
+                    accessView.classList.remove('hidden');
+                }
+            } catch(e) {
+                console.error("Initialization error:", e);
+                accessError.textContent = "Erro ao inicializar. Tente recarregar a página.";
+                accessView.classList.remove('hidden');
+            }
+        })();
+
     </script>
 </body>
 </html>
+
+
 
