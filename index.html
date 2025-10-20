@@ -281,7 +281,11 @@
                 
                 const samplesTableRowsHTML = order.samples.map(sample => `
                     <tr class="border-b last:border-b-0">
-                        <td class="p-3">${sample.produto}</td>
+                        <td class="p-3">
+                            <p class="font-semibold">${sample.produto}</p>
+                            <p class="text-xs text-gray-500">${sample.descricao}</p>
+                        </td>
+                        <td class="p-3">${sample.qtde}</td>
                         <td class="p-3 hidden md:table-cell">${sample.originalStatus}</td>
                         <td class="p-3 font-semibold">${sample.isPending ? '<span class="text-gray-500">Pendente</span>' : `<div>${sample.feedback}</div><div class='text-gray-500 font-normal text-xs'>${sample.observation}</div>`}</td>
                         <td class="p-3 text-right space-x-2">
@@ -300,6 +304,7 @@
                             <thead class="bg-gray-50 text-left">
                                 <tr>
                                     <th class="p-3 font-medium text-gray-500">Produto</th>
+                                    <th class="p-3 font-medium text-gray-500">Qtde.</th>
                                     <th class="p-3 font-medium text-gray-500 hidden md:table-cell">Status Original</th>
                                     <th class="p-3 font-medium text-gray-500">Feedback</th>
                                     <th class="p-3"></th>
@@ -443,6 +448,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
