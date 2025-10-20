@@ -136,7 +136,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         
-        const FEEDBACK_CHOICES = ['APRESENTAÇÃO PRÓ ATIVA', 'CALIBRE', 'EXTRAVIADA', 'FORA DA ESPECIFICAÇÃO DO CLIENTE', 'FORA DO PERFIL DO CLIENTE', 'FRACA / ESTOURANDO / COM CHUVEIRO', 'PRODUTO DESCONTINUADO', 'QUANTIDADE INSUFICIENTE', 'REPRESENTAÇÃO / DISTRIBUIDOR', 'SEM RETORNO DO CLIENTE', 'INNOVATION / EVENTOS', 'EXPORTACAO'];
+        const FEEDBACK_CHOICES = ['APROVADO COM PEDIDO', 'APROVADO SEM PEDIDO', 'APRESENTAÇÃO PRÓ ATIVA', 'CALIBRE', 'EXTRAVIADA', 'FORA DA ESPECIFICAÇÃO DO CLIENTE', 'FORA DO PERFIL DO CLIENTE', 'FRACA / ESTOURANDO / COM CHUVEIRO', 'PRODUTO DESCONTINUADO', 'QUANTIDADE INSUFICIENTE', 'REPRESENTAÇÃO / DISTRIBUIDOR', 'SEM RETORNO DO CLIENTE', 'INNOVATION / EVENTOS', 'EXPORTACAO'];
 
         const accessView = document.getElementById('access-view');
         const loadingState = document.getElementById('loading-state');
@@ -156,24 +156,6 @@
 
         const normalizeText = (text = '') => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
         const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
-
-        const formatQuantity = (qtdeStr) => {
-            if (!qtdeStr) return '';
-            const sanitizedStr = String(qtdeStr).replace(',', '.').trim();
-            const num = parseFloat(sanitizedStr);
-
-            if (isNaN(num)) {
-                return qtdeStr;
-            }
-
-            if (num < 1) {
-                const grams = Math.round(num * 1000);
-                return `${grams}g`;
-            } else {
-                const kilosFormatted = num.toFixed(3).replace('.', ',');
-                return `${kilosFormatted}kg`;
-            }
-        };
 
         async function attemptLogin(sessionId, sellerName, accessCode, isAutoLogin = false) {
             if (!sessionId || !sellerName || !accessCode) {
@@ -208,6 +190,7 @@
                     return true;
                 } else {
                     if (isAutoLogin) {
+                        // Saved credentials are bad, clear them and show login form
                         localStorage.clear();
                         loadingState.classList.add('hidden');
                         accessView.classList.remove('hidden');
@@ -296,13 +279,26 @@
                 const statusColor = isPendingSection ? 'yellow' : 'green';
                 orderGroup.className = `bg-white rounded-2xl shadow-sm border-l-4 border-${statusColor}-400`;
                 
-                const samplesTableRowsHTML = order.samples.map(sample => `
+                const samplesTableRowsHTML = order.samples.map(sample => {
+                     const qty = parseFloat(String(sample.qtde).replace(',', '.'));
+                     let formattedQty = '';
+                     if (!isNaN(qty)) {
+                         if (qty >= 1) {
+                             formattedQty = `${qty.toFixed(3).replace('.', ',')}kg`;
+                         } else {
+                             formattedQty = `${Math.round(qty * 1000)}g`;
+                         }
+                     } else {
+                         formattedQty = sample.qtde;
+                     }
+
+                    return `
                     <tr class="border-b last:border-b-0">
                         <td class="p-3">
                             <p class="font-semibold">${sample.produto}</p>
                             <p class="text-xs text-gray-500">${sample.descricao}</p>
                         </td>
-                        <td class="p-3">${formatQuantity(sample.qtde)}</td>
+                        <td class="p-3">${formattedQty}</td>
                         <td class="p-3 hidden md:table-cell">${sample.originalStatus}</td>
                         <td class="p-3 font-semibold">${sample.isPending ? '<span class="text-gray-500">Pendente</span>' : `<div>${sample.feedback}</div><div class='text-gray-500 font-normal text-xs'>${sample.observation}</div>`}</td>
                         <td class="p-3 text-right space-x-2">
@@ -310,12 +306,14 @@
                             ${!sample.isPending ? `<button class="delete-btn bg-red-100 text-red-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-red-200" data-sample-id='${sample.id}'>Excluir</button>` : ''}
                         </td>
                     </tr>
-                `).join('');
+                `}).join('');
 
                 orderGroup.innerHTML = `
-                    <div class="p-4 flex justify-between items-center flex-wrap gap-2">
-                        <h3 class="font-bold text-lg flex items-center"><span class="w-3 h-3 bg-${statusColor}-400 rounded-full mr-3"></span>${order.pedido} - ${order.razaoSocial}</h3>
-                        <p class="text-sm text-gray-600 font-medium">Nota Fiscal: <strong>${order.notaFiscal}</strong></p>
+                    <div class="p-4 flex justify-between items-center">
+                        <div>
+                             <h3 class="font-bold text-lg flex items-center"><span class="w-3 h-3 bg-${statusColor}-400 rounded-full mr-3"></span>${order.pedido} - ${order.razaoSocial}</h3>
+                             <p class="text-sm text-gray-500 ml-6">Nota Fiscal: ${order.notaFiscal || 'N/A'}</p>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm">
@@ -466,6 +464,7 @@
     </script>
 </body>
 </html>
+
 
 
 
