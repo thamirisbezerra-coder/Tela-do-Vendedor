@@ -157,6 +157,24 @@
         const normalizeText = (text = '') => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
         const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
 
+        const formatQuantity = (qtdeStr) => {
+            if (!qtdeStr) return '';
+            const sanitizedStr = String(qtdeStr).replace(',', '.').trim();
+            const num = parseFloat(sanitizedStr);
+
+            if (isNaN(num)) {
+                return qtdeStr;
+            }
+
+            if (num < 1) {
+                const grams = Math.round(num * 1000);
+                return `${grams}g`;
+            } else {
+                const kilosFormatted = num.toFixed(3).replace('.', ',');
+                return `${kilosFormatted}kg`;
+            }
+        };
+
         async function attemptLogin(sessionId, sellerName, accessCode, isAutoLogin = false) {
             if (!sessionId || !sellerName || !accessCode) {
                 if (!isAutoLogin) accessError.textContent = 'Todos os campos são obrigatórios.';
@@ -190,7 +208,6 @@
                     return true;
                 } else {
                     if (isAutoLogin) {
-                        // Saved credentials are bad, clear them and show login form
                         localStorage.clear();
                         loadingState.classList.add('hidden');
                         accessView.classList.remove('hidden');
@@ -285,7 +302,7 @@
                             <p class="font-semibold">${sample.produto}</p>
                             <p class="text-xs text-gray-500">${sample.descricao}</p>
                         </td>
-                        <td class="p-3">${sample.qtde}</td>
+                        <td class="p-3">${formatQuantity(sample.qtde)}</td>
                         <td class="p-3 hidden md:table-cell">${sample.originalStatus}</td>
                         <td class="p-3 font-semibold">${sample.isPending ? '<span class="text-gray-500">Pendente</span>' : `<div>${sample.feedback}</div><div class='text-gray-500 font-normal text-xs'>${sample.observation}</div>`}</td>
                         <td class="p-3 text-right space-x-2">
@@ -296,8 +313,9 @@
                 `).join('');
 
                 orderGroup.innerHTML = `
-                    <div class="p-4 flex justify-between items-center">
+                    <div class="p-4 flex justify-between items-center flex-wrap gap-2">
                         <h3 class="font-bold text-lg flex items-center"><span class="w-3 h-3 bg-${statusColor}-400 rounded-full mr-3"></span>${order.pedido} - ${order.razaoSocial}</h3>
+                        <p class="text-sm text-gray-600 font-medium">Nota Fiscal: <strong>${order.notaFiscal}</strong></p>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm">
@@ -305,7 +323,7 @@
                                 <tr>
                                     <th class="p-3 font-medium text-gray-500">Produto</th>
                                     <th class="p-3 font-medium text-gray-500">Qtde.</th>
-                                    <th class="p-3 font-medium text-gray-500 hidden md:table-cell">Status Original</th>
+                                    <th class="p-3 font-medium text-gray-500 hidden md:table-cell">Status Atual</th>
                                     <th class="p-3 font-medium text-gray-500">Feedback</th>
                                     <th class="p-3"></th>
                                 </tr>
@@ -448,6 +466,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
