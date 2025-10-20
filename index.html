@@ -136,7 +136,25 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         
-        const FEEDBACK_CHOICES = ['APROVADO COM PEDIDO', 'APROVADO SEM PEDIDO', 'APRESENTAÇÃO PRÓ ATIVA', 'CALIBRE', 'EXTRAVIADA', 'FORA DA ESPECIFICAÇÃO DO CLIENTE', 'FORA DO PERFIL DO CLIENTE', 'FRACA / ESTOURANDO / COM CHUVEIRO', 'PRODUTO DESCONTINUADO', 'QUANTIDADE INSUFICIENTE', 'REPRESENTAÇÃO / DISTRIBUIDOR', 'SEM RETORNO DO CLIENTE', 'INNOVATION / EVENTOS', 'EXPORTACAO'];
+        const FEEDBACK_CHOICES = [
+            'A - COM PEDIDO', 
+            'A - APROVADA SEM PEDIDO', 
+            'P - AMOSTRA NÃO TESTADA',
+            'P - EM ANÁLISE',
+            'P - AMOSTRA SEM FEEDBACK',
+            'R - APRESENTAÇÃO PRÓ ATIVA', 
+            'R - CALIBRE', 
+            'R - EXTRAVIADA', 
+            'R - FORA DA ESPECIFICAÇÃO DO CLIENTE', 
+            'R - FORA DO PERFIL DO CLIENTE', 
+            'R - FRACA / ESTOURANDO / COM CHUVEIRO', 
+            'R - PRODUTO DESCONTINUADO', 
+            'R - QUANTIDADE INSUFICIENTE', 
+            'R - REPRESENTAÇÃO / DISTRIBUIDOR', 
+            'R - SEM RETORNO DO CLIENTE', 
+            'E - INNOVATION / EVENTOS', 
+            'R - EXPORTACAO'
+        ];
 
         const accessView = document.getElementById('access-view');
         const loadingState = document.getElementById('loading-state');
@@ -464,6 +482,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
