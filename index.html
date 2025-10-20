@@ -153,6 +153,7 @@
             'R - REPRESENTAÇÃO / DISTRIBUIDOR', 
             'R - SEM RETORNO DO CLIENTE', 
             'E - INNOVATION / EVENTOS', 
+            'E - EVENTO',
             'R - EXPORTACAO'
         ];
 
@@ -208,7 +209,6 @@
                     return true;
                 } else {
                     if (isAutoLogin) {
-                        // Saved credentials are bad, clear them and show login form
                         localStorage.clear();
                         loadingState.classList.add('hidden');
                         accessView.classList.remove('hidden');
@@ -367,7 +367,7 @@
                 btn.addEventListener('click', (e) => {
                     const sampleId = e.currentTarget.dataset.sampleId;
                     e.currentTarget.disabled = true;
-                    updateSampleData(sampleId, { isPending: true, feedback: '', observation: '' });
+                    updateSampleData(sampleId, { isPending: true, feedback: '', observation: '', lastUpdate: new Date() });
                 });
             });
              container.querySelectorAll('.signal-manager-btn').forEach(btn => {
@@ -434,7 +434,8 @@
                 isPending: false,
                 feedback: selectedFeedback,
                 observation: document.getElementById('observation').value.trim(),
-                editedAfterCompletion: !currentSample.isPending
+                editedAfterCompletion: !currentSample.isPending,
+                lastUpdate: new Date()
             };
 
             closeModal();
@@ -482,6 +483,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
