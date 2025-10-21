@@ -119,7 +119,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, addDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -187,7 +187,7 @@
                 sessionId = `sessao_${sessionId}`;
             }
             const sellerId = sanitizeForFirebaseId(sellerName);
-            currentSessionId = sessionId; // Store session ID globally
+            currentSessionId = sessionId; 
 
             try {
                 const docRef = doc(db, "sessoes", sessionId, "vendedores", sellerId);
@@ -369,7 +369,7 @@
                 btn.addEventListener('click', (e) => {
                     const sampleId = e.currentTarget.dataset.sampleId;
                     e.currentTarget.disabled = true;
-                    updateSampleData(sampleId, { isPending: true, feedback: '', observation: '' });
+                    updateSampleData(sampleId, { isPending: true, feedback: '', observation: '', lastUpdate: new Date() });
                 });
             });
              container.querySelectorAll('.signal-manager-btn').forEach(btn => {
@@ -387,13 +387,23 @@
                         return sample;
                     });
                     
-                    const message = `<strong>${sellerName}</strong> sinalizou o(s) pedido(s): <strong>${orderId}</strong>.`;
-                    const notifId = sanitizeForFirebaseId(`${sellerName}-${orderId}`);
+                    const areAllFinalized = updatedSamples.every(s => s.finalizedByVendor);
+
+                    let message;
+                    let notifId;
+                    if (areAllFinalized) {
+                        message = `<strong>${sellerName}</strong> finalizou TODAS as suas amostras.`;
+                        notifId = sanitizeForFirebaseId(`${sellerName}-finalizou-tudo-${Date.now()}`);
+                    } else {
+                        message = `<strong>${sellerName}</strong> sinalizou o pedido: <strong>${orderId}</strong>.`;
+                        notifId = sanitizeForFirebaseId(`${sellerName}-${orderId}-${Date.now()}`);
+                    }
+                    
                     const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
                     
                     await Promise.all([
                         updateDoc(currentSellerDocRef, { amostras: updatedSamples }),
-                        setDoc(notifRef, { message, color: 'purple', timestamp: serverTimestamp() })
+                        setDoc(notifRef, { message, color: areAllFinalized ? 'green' : 'purple', timestamp: serverTimestamp() })
                     ]);
                 });
             });
@@ -495,6 +505,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
