@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Changed background color slightly */
+            background-color: #f0f4f8; 
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: fadeIn 0.5s ease; }
@@ -24,7 +24,7 @@
             color: white;
             font-size: 0.7rem;
             font-weight: bold;
-            min-width: 18px; /* Ensure it's roughly circular even with single digit */
+            min-width: 18px; 
             text-align: center;
         }
          /* Style for seller notification items */
@@ -37,6 +37,21 @@
             margin-bottom: 0.5rem;
             font-style: italic;
             color: #4b5563; /* gray-600 */
+        }
+        /* Style for manager/seller replies */
+        .manager-reply, .seller-reply {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        .manager-reply {
+            background-color: #f3f4f6; /* gray-100 */
+            border-left: 3px solid #9ca3af; /* gray-400 */
+        }
+         .seller-reply {
+            background-color: #f0f9ff; /* blue-50 */
+            border-left: 3px solid #60a5fa; /* blue-400 */
+            margin-left: 1rem; /* Indent seller reply */
         }
     </style>
 </head>
@@ -77,18 +92,21 @@
 
     <div id="main-content" class="hidden flex items-center justify-center min-h-screen p-4">
         <div class="w-full max-w-5xl">
-             <header class="mb-8 text-center relative flex justify-between items-center">
+             <header class="mb-8 text-center relative flex justify-between items-start">
                  <div> <!-- Wrapper for title and subtitle -->
                     <h1 id="welcome-title" class="text-3xl font-bold text-gray-800 text-left">Olá!</h1>
                     <p class="text-gray-600 mt-2 text-left">Este é o seu painel para gestão de feedbacks de amostras.</p>
                  </div>
                  <div class="flex items-center gap-4"> <!-- Wrapper for buttons -->
                      <!-- Notification Bell -->
-                     <button id="seller-notification-btn" class="relative text-gray-500 hover:text-gray-700" title="Ver respostas do gestor">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                        <span id="seller-notification-count" class="notification-badge hidden">0</span>
-                     </button>
-                     <button id="logout-btn" class="bg-red-500 text-white font-semibold py-1 px-3 rounded-lg text-sm hover:bg-red-600 transition-colors">Sair</button>
+                     <div class="relative flex flex-col items-center">
+                         <button id="seller-notification-btn" class="relative text-gray-500 hover:text-gray-700" title="Ver respostas do gestor">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                            <span id="seller-notification-count" class="notification-badge hidden">0</span>
+                         </button>
+                         <p id="notification-prompt" class="hidden text-xs text-blue-600 font-semibold animate-pulse">↓ Verificar</p>
+                     </div>
+                     <button id="logout-btn" class="bg-red-500 text-white font-semibold py-1 px-3 rounded-lg text-sm hover:bg-red-600 transition-colors h-fit">Sair</button>
                  </div>
             </header>
 
@@ -168,11 +186,32 @@
         </div>
     </div>
 
+    <!-- Seller Reply Modal (NEW) -->
+     <div id="seller-reply-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-40">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl p-6">
+            <h3 class="text-xl font-bold mb-4">Responder ao Gestor</h3>
+            <div class="mb-4 p-3 bg-gray-100 rounded border text-sm">
+                <p id="seller-reply-context" class="text-gray-600"></p>
+                <p id="seller-reply-original-msg" class="font-semibold italic"></p>
+            </div>
+            <div class="space-y-4">
+                 <div>
+                     <label for="seller-reply-message-input" class="block text-sm font-medium text-gray-700">Sua Resposta</label>
+                     <textarea id="seller-reply-message-input" rows="3" class="mt-1 w-full border-gray-300 rounded-lg shadow-sm" placeholder="Digite sua resposta..."></textarea>
+                 </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="cancel-seller-reply-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-5 rounded-lg">Cancelar</button>
+                <button id="send-seller-reply-btn" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg">Enviar Resposta</button>
+            </div>
+        </div>
+    </div>
+
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        // Corrected imports - removed orderBy and limit from firestore as they require index
-        import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, serverTimestamp, query, where, writeBatch, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"; 
+        // Corrected imports
+        import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, serverTimestamp, query, where, writeBatch, limit, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"; 
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -227,6 +266,16 @@
         const sellerNotificationsList = document.getElementById('seller-notifications-list');
         const closeSellerNotificationsBtn = document.getElementById('close-seller-notifications-btn');
         const closeSellerNotificationsBtnBottom = document.getElementById('close-seller-notifications-btn-bottom');
+        const notificationPrompt = document.getElementById('notification-prompt'); // New element
+        
+        // Seller Reply Modal Elements (NEW)
+        const sellerReplyModal = document.getElementById('seller-reply-modal');
+        const sellerReplyContext = document.getElementById('seller-reply-context');
+        const sellerReplyOriginalMsg = document.getElementById('seller-reply-original-msg');
+        const sellerReplyMessageInput = document.getElementById('seller-reply-message-input');
+        const cancelSellerReplyBtn = document.getElementById('cancel-seller-reply-btn');
+        const sendSellerReplyBtn = document.getElementById('send-seller-reply-btn');
+        let currentNotificationForReply = null; // Store notification being replied to
         
         let currentSample = null;
         let selectedFeedback = null;
@@ -249,7 +298,7 @@
             
             const sellerId = sanitizeForFirebaseId(sellerName);
             currentSessionId = sessionId; 
-            currentSellerOriginalName = sellerName; // Store original name initially
+            currentSellerOriginalName = sellerName; 
 
             try {
                 const docRef = doc(db, "sessoes", sessionId, "vendedores", sellerId);
@@ -257,12 +306,12 @@
 
                 if (docSnap.exists() && docSnap.data().accessCode === accessCode) {
                     currentSellerDocRef = docRef;
-                    welcomeTitle.textContent = `Olá, ${docSnap.data().originalName}!`; // Use originalName from DB
-                    currentSellerOriginalName = docSnap.data().originalName; // Ensure we use the correct casing from DB
+                    welcomeTitle.textContent = `Olá, ${docSnap.data().originalName}!`; 
+                    currentSellerOriginalName = docSnap.data().originalName; 
 
                     if (!isAutoLogin) {
                         localStorage.setItem('sellerSessionId', sessionId);
-                        localStorage.setItem('sellerName', currentSellerOriginalName); // Store original name
+                        localStorage.setItem('sellerName', currentSellerOriginalName); 
                         localStorage.setItem('sellerAccessCode', accessCode);
                     }
                     
@@ -289,7 +338,6 @@
             } catch (e) {
                 if (!isAutoLogin) accessError.textContent = 'Erro ao conectar. Verifique sua internet ou o ID da Sessão.';
                 console.error("Erro de autenticação ou busca:", e);
-                // If autologin fails, clear local storage and show login
                 if(isAutoLogin) {
                     localStorage.clear();
                     loadingState.classList.add('hidden');
@@ -297,7 +345,7 @@
                 }
                 return false;
             } finally {
-                 if (!isAutoLogin) { // Reset button only on manual login attempt fail
+                 if (!isAutoLogin) { 
                      loadDataBtn.disabled = false;
                      loadDataBtn.textContent = 'Aceder Amostras';
                  }
@@ -305,7 +353,7 @@
         }
         
         loadDataBtn.addEventListener('click', () => {
-             loadDataBtn.disabled = true; // Disable button immediately
+             loadDataBtn.disabled = true; 
              loadDataBtn.textContent = 'A verificar...';
             const sessionId = document.getElementById('session-id-input').value.trim();
             const sellerName = document.getElementById('seller-name-input').value.trim();
@@ -318,14 +366,17 @@
             localStorage.removeItem('sellerName');
             localStorage.removeItem('sellerAccessCode');
             if(unsubscribe) unsubscribe();
-            if (sellerNotificationListenerUnsubscribe) sellerNotificationListenerUnsubscribe(); // Stop notification listener
+            if (sellerNotificationListenerUnsubscribe) sellerNotificationListenerUnsubscribe(); 
             window.location.reload();
         });
 
-        // --- FIX: Added event listener for the notification bell ---
+        // --- Event listeners for notification modals ---
         sellerNotificationBtn.addEventListener('click', showSellerNotifications);
         closeSellerNotificationsBtn.addEventListener('click', hideSellerNotifications);
         closeSellerNotificationsBtnBottom.addEventListener('click', hideSellerNotifications);
+        // Seller Reply Modal Listeners
+        cancelSellerReplyBtn.addEventListener('click', () => sellerReplyModal.classList.add('hidden'));
+        sendSellerReplyBtn.addEventListener('click', sendReplyToManager);
 
 
         function startRealtimeListener() {
@@ -345,8 +396,8 @@
                 }
                 noDataMessage.classList.add('hidden');
 
-                const pendingSamples = allSellerSamples.filter(s => s.isPending && !s.finalizedByVendor); // Filter correctly
-                const completedSamples = allSellerSamples.filter(s => s.finalizedByVendor); // Show samples marked as finalized
+                const pendingSamples = allSellerSamples.filter(s => s.isPending && !s.finalizedByVendor); 
+                const completedSamples = allSellerSamples.filter(s => s.finalizedByVendor); 
                 
                 renderOrders(pendingSamples, 'pending');
                 renderOrders(completedSamples, 'completed');
@@ -371,7 +422,7 @@
             
             const groupedByOrder = samples.reduce((acc, sample) => {
                 const key = sample.pedido;
-                if (!acc[key]) acc[key] = { ...sample, samples: [] }; // Use first sample for order info
+                if (!acc[key]) acc[key] = { ...sample, samples: [] }; 
                 acc[key].samples.push(sample);
                 return acc;
             }, {});
@@ -380,22 +431,21 @@
 
             Object.values(groupedByOrder).forEach(order => {
                 const orderGroup = document.createElement('div');
-                // Check if *all* samples within *this specific order* are answered (not globally)
                 const allSamplesInThisOrderAnswered = order.samples.every(s => !s.isPending); 
-                const statusColor = isPendingSection ? (allSamplesInThisOrderAnswered ? 'blue' : 'yellow') : 'green'; // Blue if pending but ready to signal
-                orderGroup.className = `bg-white rounded-2xl shadow-sm border-l-4 border-${statusColor}-400 fade-in`; // Add fade-in
+                const statusColor = isPendingSection ? (allSamplesInThisOrderAnswered ? 'blue' : 'yellow') : 'green'; 
+                orderGroup.className = `bg-white rounded-2xl shadow-sm border-l-4 border-${statusColor}-400 fade-in`; 
                 
                 const samplesTableRowsHTML = order.samples.map(sample => {
                      const qty = parseFloat(String(sample.qtde).replace(',', '.'));
                      let formattedQty = '';
                      if (!isNaN(qty)) {
-                         if (qty >= 1 || qty === 0) { // Handle 0kg case
+                         if (qty >= 1 || qty === 0) { 
                               formattedQty = `${qty.toFixed(3).replace('.', ',')}kg`;
                          } else {
                               formattedQty = `${Math.round(qty * 1000)}g`;
                          }
                      } else {
-                          formattedQty = sample.qtde; // Fallback to original string if not a number
+                          formattedQty = sample.qtde; 
                      }
 
 
@@ -416,14 +466,14 @@
                 `}).join('');
 
                 orderGroup.innerHTML = `
-                    <div class="p-4 flex justify-between items-center cursor-pointer order-header"> <!-- Added order-header class -->
+                    <div class="p-4 flex justify-between items-center cursor-pointer order-header"> 
                         <div>
                              <h3 class="font-bold text-lg flex items-center"><span class="w-3 h-3 bg-${statusColor}-400 rounded-full mr-3"></span>${order.pedido} - ${order.razaoSocial}</h3>
                              <p class="text-sm text-gray-500 ml-6">Nota Fiscal: ${order.notaFiscal || 'N/A'}</p>
                         </div>
                         <svg class="w-5 h-5 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
-                    <div class="overflow-x-auto samples-table hidden"> <!-- Added samples-table class and hidden -->
+                    <div class="overflow-x-auto samples-table hidden"> 
                         <table class="min-w-full text-sm">
                             <thead class="bg-gray-50 text-left">
                                 <tr>
@@ -666,13 +716,15 @@
 
 
         function updateSellerNotificationBadge() {
-             if(!sellerNotificationCount) return; // Add null check
+             if(!sellerNotificationCount || !notificationPrompt) return; // Add null check for both
             const unreadCount = sellerNotifications.filter(n => !n.read).length;
             if (unreadCount > 0) {
                 sellerNotificationCount.textContent = unreadCount;
                 sellerNotificationCount.classList.remove('hidden');
+                notificationPrompt.classList.remove('hidden'); // Show prompt
             } else {
                 sellerNotificationCount.classList.add('hidden');
+                notificationPrompt.classList.add('hidden'); // Hide prompt
             }
         }
 
@@ -681,41 +733,151 @@
              if (sellerNotifications.length === 0) {
                  sellerNotificationsList.innerHTML = '<p class="text-gray-500">Nenhuma resposta recebida.</p>';
              } else {
-                 const batch = writeBatch(db);
-                 let needsUpdate = false;
-                 // Use the already sorted sellerNotifications array
+                 // No batch update here, user must click check
                  sellerNotifications.forEach(notif => { 
                      const itemDiv = document.createElement('div');
+                     
+                     // Check if this notification has a reply from the seller
+                    const hasSellerReply = notif.sellerReplyMessage && notif.sellerReplyMessage.trim() !== '';
+
+                    const replyButtonHtml = `<button class="seller-reply-btn bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-xs font-semibold ml-2" data-notif-id="${notif.id}">
+                                                ${hasSellerReply ? 'Ver/Responder' : 'Responder'}
+                                            </button>`;
+                    const readButtonHtml = !notif.read ? `<button class="mark-as-read-btn bg-gray-200 text-gray-700 hover:bg-gray-300 px-2 py-1 rounded text-xs font-semibold ml-2" data-notif-id="${notif.id}">✓ Marcar como Lida</button>` : `<span class="text-green-500 text-xs font-semibold ml-2">✓ Lida</span>`;
+
                      itemDiv.className = `seller-notification-item text-sm ${!notif.read ? 'font-semibold bg-blue-50 p-2 rounded' : 'text-gray-600 p-2'}`; // Highlight unread
                      itemDiv.innerHTML = `
                          <p class="mb-1">
                              <span class="font-bold">${notif.managerName}</span> respondeu sobre 
                              <strong>${notif.produto}</strong> (Pedido: ${notif.pedido}):
                          </p>
-                         <p>${notif.replyMessage}</p>
+                         <div class="manager-reply">${notif.replyMessage}</div>
+                         
+                         ${hasSellerReply ? `
+                         <div class="seller-reply">
+                             <p><strong>Você respondeu:</strong> ${notif.sellerReplyMessage}</p>
+                         </div>` : ''}
+
                          ${notif.originalObservation ? `<blockquote>Observação Original: "${notif.originalObservation}"</blockquote>` : ''}
-                         <p class="text-xs text-gray-400 mt-1 text-right">${notif.timestamp?.toDate().toLocaleString('pt-BR') ?? 'Data indisponível'}</p>
+                         
+                         <div class="flex justify-between items-center mt-2">
+                             <p class="text-xs text-gray-400">${notif.timestamp?.toDate().toLocaleString('pt-BR') ?? 'Data indisponível'}</p>
+                             <div class="flex gap-2">
+                                 ${replyButtonHtml}
+                                 ${readButtonHtml}
+                             </div>
+                         </div>
                      `;
                      sellerNotificationsList.appendChild(itemDiv);
-
-                     if (!notif.read) {
-                         const notifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", notif.id);
-                         batch.update(notifRef, { read: true });
-                         needsUpdate = true;
-                     }
                  });
 
-                 if (needsUpdate) {
-                     try {
-                         await batch.commit();
-                         // The listener will shortly update the array and badge after commit reflects
-                         console.log("Notificações marcadas como lidas.");
-                     } catch (error) {
-                         console.error("Erro ao marcar notificações como lidas:", error);
-                     }
-                 }
+                 // Add listeners for the new buttons
+                 sellerNotificationsList.querySelectorAll('.mark-as-read-btn').forEach(btn => {
+                     btn.addEventListener('click', markNotificationAsRead);
+                 });
+                 sellerNotificationsList.querySelectorAll('.seller-reply-btn').forEach(btn => {
+                     btn.addEventListener('click', openSellerReplyModal);
+                 });
              }
              sellerNotificationsModal.classList.remove('hidden');
+        }
+
+        // --- New function to handle Mark as Read click ---
+        async function markNotificationAsRead(e) {
+            const notifId = e.target.dataset.notifId;
+            e.target.disabled = true;
+            e.target.textContent = 'A marcar...';
+            const notifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", notifId);
+            try {
+                await updateDoc(notifRef, { read: true });
+                // Listener will update the UI automatically
+                // Manually update local state for immediate UI feedback in modal
+                 const notifIndex = sellerNotifications.findIndex(n => n.id === notifId);
+                 if (notifIndex > -1) {
+                     sellerNotifications[notifIndex].read = true;
+                 }
+                 // Re-render modal list
+                 showSellerNotifications();
+                 // Update badge
+                 updateSellerNotificationBadge();
+            } catch (err) {
+                console.error("Erro ao marcar como lida:", err);
+                e.target.disabled = false; // Re-enable if failed
+                e.target.textContent = '✓ Marcar como Lida';
+            }
+        }
+        
+        // --- New function to open Seller Reply Modal ---
+        function openSellerReplyModal(e) {
+            const notifId = e.target.dataset.notifId;
+            const notification = sellerNotifications.find(n => n.id === notifId);
+            if (!notification) return;
+
+            currentNotificationForReply = notification; // Store the whole notification object
+
+            sellerReplyContext.textContent = `Em resposta a ${notification.managerName} (Ref. ${notification.produto}):`;
+            sellerReplyOriginalMsg.textContent = `"${notification.replyMessage}"`;
+            sellerReplyMessageInput.value = ''; // Clear previous text
+            
+            sellerNotificationsModal.classList.add('hidden'); // Hide notification list
+            sellerReplyModal.classList.remove('hidden'); // Show reply modal
+        }
+
+        // --- New function to send reply TO MANAGER ---
+        async function sendReplyToManager() {
+            if (!currentNotificationForReply || !currentSessionId || !currentSellerOriginalName) return;
+
+            const replyMessage = sellerReplyMessageInput.value.trim();
+            if (!replyMessage) {
+                alert("Por favor, escreva a sua resposta.");
+                return;
+            }
+
+            sendSellerReplyBtn.disabled = true;
+            sendSellerReplyBtn.textContent = 'A Enviar...';
+
+            try {
+                const replyData = {
+                    sellerName: currentSellerOriginalName,
+                    replyMessage: replyMessage,
+                    originalManagerMessage: currentNotificationForReply.replyMessage,
+                    originalManagerName: currentNotificationForReply.managerName,
+                    pedido: currentNotificationForReply.pedido,
+                    produto: currentNotificationForReply.produto,
+                    timestamp: serverTimestamp(),
+                    readByManager: false // Manager hasn't read it yet
+                };
+
+                // Add to the new "respostasVendedor" collection
+                const repliesRef = collection(db, "sessoes", currentSessionId, "respostasVendedor");
+                await addDoc(repliesRef, replyData);
+
+                // Also update the manager's notification to include this reply (for threading)
+                const managerNotifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", currentNotificationForReply.id);
+                await updateDoc(managerNotifRef, {
+                     sellerReplyMessage: replyMessage,
+                     read: true // Mark as read since seller replied
+                });
+
+                // Update local data immediately
+                const notifIndex = sellerNotifications.findIndex(n => n.id === currentNotificationForReply.id);
+                 if (notifIndex > -1) {
+                     sellerNotifications[notifIndex].read = true;
+                     sellerNotifications[notifIndex].sellerReplyMessage = replyMessage;
+                 }
+
+                sellerReplyModal.classList.add('hidden');
+                // Re-open the main notification list to see the updated thread
+                showSellerNotifications(); 
+
+            } catch (error) {
+                console.error("Erro ao enviar resposta ao gestor:", error);
+                alert("Ocorreu um erro ao enviar a resposta. Tente novamente.");
+            } finally {
+                sendSellerReplyBtn.disabled = false;
+                sendSellerReplyBtn.textContent = 'Enviar Resposta';
+                currentNotificationForReply = null;
+            }
         }
 
 
@@ -741,7 +903,7 @@
                 // Check if window/tab is active
                 if(document.visibilityState === 'visible') {
                      console.log("Tab is active, skipping browser notification.");
-                     return; // Don't show if user is looking at the page
+                     return; 
                 }
                 const notification = new Notification(title, {
                     body: body,
@@ -762,13 +924,12 @@
                  accessView.classList.add('hidden');
                  loadingState.classList.remove('hidden');
                  const loginSuccess = await attemptLogin(savedSessionId, savedSellerName, savedAccessCode, true);
-                 // If auto-login fails, attemptLogin handles showing the login view
                  if (!loginSuccess) {
                      console.log("Auto-login falhou. A mostrar ecrã de login.");
                      // attemptLogin already shows login view on failure during auto-login
                  }
             } else {
-                 accessView.classList.remove('hidden'); // Show login if nothing saved
+                 accessView.classList.remove('hidden'); 
                  loadingState.classList.add('hidden');
             }
         }
@@ -789,7 +950,7 @@
 </body>
 </html>
 
->
+
 
 
 
