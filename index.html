@@ -375,7 +375,10 @@
         closeSellerNotificationsBtn.addEventListener('click', hideSellerNotifications);
         closeSellerNotificationsBtnBottom.addEventListener('click', hideSellerNotifications);
         // Seller Reply Modal Listeners
-        cancelSellerReplyBtn.addEventListener('click', () => sellerReplyModal.classList.add('hidden'));
+        cancelSellerReplyBtn.addEventListener('click', () => {
+            sellerReplyModal.classList.add('hidden');
+            showSellerNotifications(); // Re-open the notifications list
+        });
         sendSellerReplyBtn.addEventListener('click', sendReplyToManager);
 
 
@@ -622,7 +625,7 @@
         document.getElementById('cancel-modal-btn').addEventListener('click', closeModal);
         document.getElementById('observation').addEventListener('input', validateForm);
         
-        document.getElementById('save-button').addEventListener('click', () => {
+        document.getElementById('save-button').addEventListener('click', async () => { // Make async
             if (document.getElementById('save-button').disabled) return;
             
             const updates = {
@@ -634,8 +637,34 @@
             };
 
             closeModal();
-            updateSampleData(currentSample.id, updates);
+            // Store a copy of 'edited' flag before updating
+            const wasEdited = updates.editedAfterCompletion; 
+            
+            // Update the sample data in Firestore
+            await updateSampleData(currentSample.id, updates);
+
+            // --- NEW: Notify manager if feedback was edited ---
+            if (wasEdited) {
+                try {
+                    const sellerName = welcomeTitle.textContent.replace('Olá, ', '').replace('!', '');
+                    const message = `<strong>${sellerName}</strong> <i>editou</i> o feedback para <strong>${currentSample.produto}</strong> (Pedido ${currentSample.pedido}): ${selectedFeedback}`;
+                    const notifId = sanitizeForFirebaseId(`edit-${currentSample.id}-${Date.now()}`);
+                    const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
+                    
+                    await setDoc(notifRef, {
+                        message,
+                        color: 'orange', // Cor para edições
+                        timestamp: serverTimestamp(),
+                        triggerPopup: true // Acionar pop-up para o gestor
+                    });
+                    console.log("Notificação de edição enviada.");
+                } catch (notifError) {
+                    console.error("Erro ao enviar notificação de edição:", notifError);
+                    // Não bloquear o utilizador por isto, apenas registar o erro
+                }
+            }
         });
+
 
         async function updateSampleData(sampleId, updates) {
             try {
@@ -900,7 +929,6 @@
 
         function showBrowserNotification(title, body) {
             if (Notification.permission === 'granted') {
-                // Check if window/tab is active
                 if(document.visibilityState === 'visible') {
                      console.log("Tab is active, skipping browser notification.");
                      return; 
@@ -949,6 +977,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
