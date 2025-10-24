@@ -172,7 +172,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         // Corrected imports - removed orderBy and limit from firestore as they require index
-        import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, serverTimestamp, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"; 
+        import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, serverTimestamp, query, where, writeBatch, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"; 
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -321,6 +321,12 @@
             if (sellerNotificationListenerUnsubscribe) sellerNotificationListenerUnsubscribe(); // Stop notification listener
             window.location.reload();
         });
+
+        // --- FIX: Added event listener for the notification bell ---
+        sellerNotificationBtn.addEventListener('click', showSellerNotifications);
+        closeSellerNotificationsBtn.addEventListener('click', hideSellerNotifications);
+        closeSellerNotificationsBtnBottom.addEventListener('click', hideSellerNotifications);
+
 
         function startRealtimeListener() {
             if (unsubscribe) unsubscribe();
@@ -782,6 +788,9 @@
     </script>
 </body>
 </html>
+
+>
+
 
 
 
