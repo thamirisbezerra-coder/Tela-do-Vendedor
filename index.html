@@ -53,6 +53,15 @@
             border-left: 3px solid #60a5fa; /* blue-400 */
             margin-left: 1rem; /* Indent seller reply */
         }
+        /* Style for answered rows in pending list */
+        tr.answered-sample td {
+             /* Slightly dimmer text for answered samples */
+            color: #6b7280; /* gray-500 */
+        }
+        tr.answered-sample .font-semibold {
+            font-weight: 500; /* Medium instead of bold */
+        }
+
     </style>
 </head>
 <body class="bg-gray-100">
@@ -120,7 +129,7 @@
                     <h3 class="font-bold text-lg mb-2 text-gray-800">Como Funciona?</h3>
                     <ol class="list-decimal list-inside text-sm text-gray-600 space-y-1">
                         <li>Expanda um pedido para ver as amostras.</li>
-                        <li>Clique em <strong>"Atualizar"</strong> na amostra desejada.</li>
+                        <li>Clique em <strong>"Atualizar"</strong> na amostra desejada (ou "Editar" se já respondeu).</li>
                         <li>Selecione uma opção de feedback e escreva a observação.</li>
                         <li>Quando todas as amostras de um pedido forem respondidas, clique em <strong>"Sinalizar Gestor"</strong> para o notificar.</li>
                         <li>Verifique as respostas do gestor clicando no <strong class="text-blue-600">sino 🔔</strong>.</li>
@@ -138,7 +147,7 @@
             </div>
 
             <div id="pending-section" class="hidden">
-                <h2 id="pending-orders-count" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+                <h2 id="pending-orders-count" class="text-2xl font-bold text-gray-800 mb-4">Pedidos Pendentes</h2>
                 <div id="pending-orders-list" class="space-y-4"></div>
             </div>
 
@@ -446,11 +455,13 @@
                     document.getElementById('completed-section').classList.add('hidden');
                 } else {
                     noDataMessage.classList.add('hidden');
-                    // Separate samples into pending and completed (signaled)
-                    const pendingSamples = allSellerSamples.filter(s => s.isPending && !s.finalizedByVendor);
-                    const completedSamples = allSellerSamples.filter(s => s.finalizedByVendor); // Use finalizedByVendor flag
+                    // *** MODIFICATION: Filter samples differently for rendering ***
+                    // Pending section: Samples NOT finalized by vendor
+                    const pendingSamplesForDisplay = allSellerSamples.filter(s => !s.finalizedByVendor);
+                    // Completed section: Samples finalized by vendor
+                    const completedSamples = allSellerSamples.filter(s => s.finalizedByVendor);
 
-                    renderOrders(pendingSamples, 'pending');
+                    renderOrders(pendingSamplesForDisplay, 'pending'); // Pass only non-finalized
                     renderOrders(completedSamples, 'completed');
                 }
             }, (error) => {
@@ -512,39 +523,56 @@
         // --- UI Rendering Functions ---
 
         // Render pending or completed orders list
-        function renderOrders(samples, type) {
+        function renderOrders(samplesToDisplay, type) { // Changed input name
             const isPendingSection = type === 'pending';
             const container = document.getElementById(`${type}-orders-list`);
             const section = document.getElementById(`${type}-section`);
 
             if (!container || !section) return; // Basic safety check
 
-            if (samples.length === 0) {
+            if (samplesToDisplay.length === 0) {
                 section.classList.add('hidden');
+                // Update pending count text even if the list is empty now
+                if (isPendingSection) {
+                     const countEl = document.getElementById('pending-orders-count');
+                     if (countEl) countEl.textContent = `Nenhum Pedido Pendente`;
+                 }
                 return;
             }
 
             section.classList.remove('hidden');
             container.innerHTML = ''; // Clear previous content
 
-            // Group samples by order ID
-            const groupedByOrder = samples.reduce((acc, sample) => {
+            // Group samples by order ID (using the filtered samplesToDisplay)
+            const groupedByOrder = samplesToDisplay.reduce((acc, sample) => {
                 const key = sample.pedido;
                 if (!acc[key]) acc[key] = { ...sample, samples: [] }; // Use first sample for order info
                 acc[key].samples.push(sample);
                 return acc;
             }, {});
 
+            // Sort orders within the group (e.g., by Pedido number, numerically if possible)
+             const sortedOrderKeys = Object.keys(groupedByOrder).sort((a, b) => {
+                 const numA = parseInt(a, 10);
+                 const numB = parseInt(b, 10);
+                 if (!isNaN(numA) && !isNaN(numB)) {
+                     return numA - numB; // Sort numerically
+                 }
+                 return a.localeCompare(b); // Fallback to string sort
+             });
+
             if (isPendingSection) {
                 const countEl = document.getElementById('pending-orders-count');
-                if (countEl) countEl.textContent = `${Object.keys(groupedByOrder).length} Pedido(s) com Pendências`;
+                 if (countEl) countEl.textContent = `${sortedOrderKeys.length} Pedido(s) ${sortedOrderKeys.length > 1 ? '' : ' '}com Pendências`;
             }
 
-            // Create collapsible group for each order
-            Object.values(groupedByOrder).forEach(order => {
+            // Create collapsible group for each order using sorted keys
+             sortedOrderKeys.forEach(orderId => {
+                 const order = groupedByOrder[orderId];
                 const orderGroup = document.createElement('div');
+                // *** MODIFICATION: Check if ALL samples within THIS specific order group are answered ***
                 const allSamplesInThisOrderAnswered = order.samples.every(s => !s.isPending);
-                // Determine border color based on section type and completion status
+                // Determine border color based on section type and completion status *within this order*
                 const statusColor = isPendingSection ? (allSamplesInThisOrderAnswered ? 'blue' : 'yellow') : 'green';
                 orderGroup.className = `bg-white rounded-2xl shadow-sm border-l-4 border-${statusColor}-400 fade-in`;
 
@@ -561,25 +589,30 @@
 
                     // Display feedback/observation or "Pendente"
                     const feedbackDisplay = sample.isPending
-                        ? '<span class="text-gray-500">Pendente</span>'
+                        ? '<span class="text-yellow-600 font-semibold">Pendente</span>' // Make pending stand out
                         : `<div>${sample.feedback || 'N/A'}</div><div class='text-gray-500 font-normal text-xs'>${sample.observation || ''}</div>`;
 
-                    // Show "Excluir" button only if feedback exists
-                    const deleteButtonHtml = !sample.isPending
+                    // Show "Excluir" button only if feedback exists (and it's in pending section)
+                    const deleteButtonHtml = !sample.isPending && isPendingSection // Only show delete in pending section
                         ? `<button class="delete-btn bg-red-100 text-red-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-red-200" data-sample-id='${sample.id}'>Excluir</button>`
                         : '';
+                    // Button text: Atualizar if pending, Editar if answered
+                    const updateButtonText = sample.isPending ? 'Atualizar' : 'Editar';
+                     // Add class if answered for styling
+                     const answeredClass = !sample.isPending ? 'answered-sample' : '';
 
                     return `
-                        <tr class="border-b last:border-b-0">
+                        <tr class="border-b last:border-b-0 ${answeredClass}">
                             <td class="p-3">
                                 <p class="font-semibold">${sample.produto}</p>
                                 <p class="text-xs text-gray-500">${sample.descricao || ''}</p>
                             </td>
                             <td class="p-3">${formattedQty}</td>
                             <td class="p-3 hidden md:table-cell">${sample.originalStatus || 'N/A'}</td>
-                            <td class="p-3 font-semibold">${feedbackDisplay}</td>
+                            <td class="p-3">${feedbackDisplay}</td> {/* Removed font-semibold from here */}
                             <td class="p-3 text-right space-x-2">
-                                <button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${sample.isPending ? 'Atualizar' : 'Editar'}</button>
+                                {/* Button is always visible in pending section */}
+                                ${isPendingSection ? `<button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${updateButtonText}</button>` : ''}
                                 ${deleteButtonHtml}
                             </td>
                         </tr>
@@ -633,71 +666,67 @@
                 });
             });
 
-            container.querySelectorAll('.update-btn').forEach(btn => {
+             // Add listeners only within the specific container (pending or completed)
+             container.querySelectorAll('.update-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
+                    // Find in the main 'allSellerSamples' array
                     const sampleToUpdate = allSellerSamples.find(s => s.id === btn.dataset.sampleId);
-                    if (sampleToUpdate) openFeedbackModal(sampleToUpdate); // Renamed function
+                    if (sampleToUpdate) openFeedbackModal(sampleToUpdate);
                 });
             });
-            container.querySelectorAll('.delete-btn').forEach(btn => {
+             container.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const sampleId = e.currentTarget.dataset.sampleId;
-                    // Standard browser confirm dialog
                     if (!confirm('Tem a certeza que quer excluir este feedback e voltar a amostra para pendente?')) {
                         return;
                     }
-                    e.currentTarget.disabled = true; // Disable button during update
-                    // Reset feedback fields and mark as pending
-                    // *** CORRECTION: Use new Date() for timestamp ***
-                    await updateSampleData(sampleId, { isPending: true, feedback: '', observation: '', finalizedByVendor: false, editedAfterCompletion: false, lastUpdate: new Date() }); // Wait for update
-                    // UI will update via listener
+                    e.currentTarget.disabled = true;
+                    // Reset fields and use client-side timestamp
+                    await updateSampleData(sampleId, { isPending: true, feedback: '', observation: '', finalizedByVendor: false, editedAfterCompletion: false, lastUpdate: new Date() });
                 });
             });
-             container.querySelectorAll('.signal-manager-btn').forEach(btn => {
-                 btn.addEventListener('click', async (e) => {
-                     const orderId = e.currentTarget.dataset.orderId;
-                     e.currentTarget.disabled = true;
-                     e.currentTarget.textContent = 'Sinalizado!';
+              container.querySelectorAll('.signal-manager-btn').forEach(btn => {
+                  btn.addEventListener('click', async (e) => {
+                      const orderId = e.currentTarget.dataset.orderId;
+                      e.currentTarget.disabled = true;
+                      e.currentTarget.textContent = 'Sinalizado!';
 
-                     // Update samples locally first for responsiveness
-                     const updatedSamplesLocally = allSellerSamples.map(sample => {
-                         if (sample.pedido === orderId && !sample.isPending) { // Only mark finalized if already answered
-                             return { ...sample, finalizedByVendor: true };
-                         }
-                         return sample;
-                     });
-                     allSellerSamples = updatedSamplesLocally; // Update local cache
+                      // Update samples locally first for responsiveness
+                      const updatedSamplesLocally = allSellerSamples.map(sample => {
+                          if (sample.pedido === orderId && !sample.isPending) { // Only mark finalized if already answered
+                              return { ...sample, finalizedByVendor: true };
+                          }
+                          return sample;
+                      });
+                      allSellerSamples = updatedSamplesLocally; // Update local cache
 
-                     // Update Firestore (replace entire samples array)
-                     try {
-                         await updateDoc(currentSellerDocRef, { amostras: updatedSamplesLocally });
-                         console.log(`Pedido ${orderId} marcado como finalizado pelo vendedor.`);
+                      // Update Firestore
+                      try {
+                          await updateDoc(currentSellerDocRef, { amostras: updatedSamplesLocally });
+                          console.log(`Pedido ${orderId} marcado como finalizado pelo vendedor.`);
 
-                         // Send notification to manager
-                         const sellerName = currentSellerOriginalName; // Use stored original name
-                         const message = `<strong>${sellerName}</strong> sinalizou o pedido: <strong>${orderId}</strong> como concluído.`;
-                         const notifId = sanitizeForFirebaseId(`${sellerName}-${orderId}-concluido-${Date.now()}`);
-                         const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
-                         await setDoc(notifRef, {
-                             message,
-                             color: 'purple', // Use purple for signaled orders
-                             timestamp: serverTimestamp(), // serverTimestamp is OK here as it's not inside an array
-                             triggerPopup: false // Don't trigger browser popup for this
-                         });
+                          // Send notification to manager
+                          const sellerName = currentSellerOriginalName;
+                          const message = `<strong>${sellerName}</strong> sinalizou o pedido: <strong>${orderId}</strong> como concluído.`;
+                          const notifId = sanitizeForFirebaseId(`${sellerName}-${orderId}-concluido-${Date.now()}`);
+                          const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
+                          await setDoc(notifRef, {
+                              message,
+                              color: 'purple',
+                              timestamp: serverTimestamp(), // OK here
+                              triggerPopup: false
+                          });
 
-                     } catch(error) {
-                         console.error("Erro ao sinalizar gestor ou atualizar amostras:", error);
-                         alert("Erro ao sinalizar. Tente novamente.");
-                         // Revert button state on error
-                         e.currentTarget.disabled = false;
-                         e.currentTarget.textContent = 'Sinalizar Gestor';
-                         // Optionally revert local state (more complex)
-                     }
-                      // Re-render orders (will happen via listener, but this ensures immediate feedback if listener lags)
-                      renderOrders(allSellerSamples.filter(s => s.isPending && !s.finalizedByVendor), 'pending');
-                      renderOrders(allSellerSamples.filter(s => s.finalizedByVendor), 'completed');
-                 });
-             });
+                      } catch(error) {
+                          console.error("Erro ao sinalizar gestor ou atualizar amostras:", error);
+                          alert("Erro ao sinalizar. Tente novamente.");
+                          e.currentTarget.disabled = false;
+                          e.currentTarget.textContent = 'Sinalizar Gestor';
+                          // Consider reverting local state on error
+                      }
+                       // Re-rendering happens via listener
+                  });
+              });
         }
 
         // --- Feedback Modal Functions ---
@@ -788,7 +817,8 @@
                 // *** Ensure lastUpdate is a Firestore Timestamp if using new Date() ***
                 const updatesWithTimestamp = {
                      ...updates,
-                     lastUpdate: updates.lastUpdate instanceof Date ? Timestamp.fromDate(updates.lastUpdate) : updates.lastUpdate // Convert Date to Timestamp
+                     // Convert client-side Date to Firestore Timestamp before saving
+                     lastUpdate: updates.lastUpdate instanceof Date ? Timestamp.fromDate(updates.lastUpdate) : updates.lastUpdate
                  };
                 updatedSamples[sampleIndex] = { ...updatedSamples[sampleIndex], ...updatesWithTimestamp };
 
@@ -796,7 +826,8 @@
                 await updateDoc(currentSellerDocRef, { amostras: updatedSamples });
 
                 // Update local state *after* successful Firestore update
-                allSellerSamples = updatedSamples;
+                // The listener will eventually update this, but doing it here provides quicker UI feedback if needed
+                // allSellerSamples = updatedSamples; // Optional: Update local state immediately
 
                 console.log(`Sample ${sampleId} updated successfully.`);
                  // UI update will be handled by the onSnapshot listener
@@ -869,7 +900,7 @@
                          ${notif.originalObservation ? `<blockquote>Observação Original: "${notif.originalObservation}"</blockquote>` : ''}
 
                          <div class="flex justify-between items-center mt-2">
-                              <p class="text-xs text-gray-400">${notif.timestamp?.toDate().toLocaleString('pt-BR') ?? 'Data indisponível'}</p>
+                              <p class="text-xs text-gray-400">${notif.timestamp?.toDate() ? notif.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p> {/* Added null check */}
                               <div class="flex gap-2">
                                    ${replyButtonHtml}
                                    ${readButtonHtml}
@@ -1060,6 +1091,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
