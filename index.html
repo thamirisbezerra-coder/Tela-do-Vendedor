@@ -596,7 +596,6 @@
                         : `<div>${sample.feedback || 'N/A'}</div><div class='text-gray-500 font-normal text-xs'>${sample.observation || ''}</div>`;
 
                     // Buttons
-                    // *** MODIFICATION: Show Edit/Delete in both sections ***
                     const deleteButtonHtml = !sample.isPending // Show delete if not pending (in either section)
                         ? `<button class="delete-btn bg-red-100 text-red-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-red-200" data-sample-id='${sample.id}'>Excluir</button>`
                         : '';
@@ -658,7 +657,7 @@
                         ${!isPendingSection ? `
                         <div class="p-3 border-t text-xs text-gray-500 bg-gray-50 text-center">
                              Este pedido já foi sinalizado para o gestor. Edite ou exclua um feedback se necessário.
-                        </div>` : ''} {/* Updated text for completed section */}
+                        </div>` : ''}
                     </div>
                 `;
 
@@ -690,7 +689,7 @@
                         return;
                     }
                     e.currentTarget.disabled = true;
-                    // *** MODIFICATION: Reset finalizedByVendor when deleting ***
+                    // Reset fields and use client-side timestamp
                     await updateSampleData(sampleId, {
                         isPending: true,
                         feedback: '',
@@ -795,7 +794,6 @@
                 feedback: newFeedback,
                 observation: newObservation,
                 // Keep existing finalizedByVendor status unless deleting
-                // editedAfterCompletion: wasEdited || editedAfterFinalized, // Mark if edited after initial completion OR after finalization
                 editedAfterCompletion: editedAfterFinalized, // Only mark if edited *after* signaling manager
                 lastUpdate: new Date() // *** CORRECTION: Use client-side timestamp ***
             };
@@ -1111,6 +1109,7 @@
     </script>
 </body>
 </html>
+
 
 
 
