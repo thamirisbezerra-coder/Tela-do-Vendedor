@@ -53,14 +53,25 @@
             border-left: 3px solid #60a5fa; /* blue-400 */
             margin-left: 1rem; /* Indent seller reply */
         }
-        /* Style for answered rows in pending list */
-        tr.answered-sample td {
-             /* Slightly dimmer text for answered samples */
-            color: #6b7280; /* gray-500 */
+        /* Style for answered rows in pending list - REMOVED, using dot now */
+        /* tr.answered-sample td {
+             color: #6b7280;
         }
         tr.answered-sample .font-semibold {
-            font-weight: 500; /* Medium instead of bold */
+            font-weight: 500;
+        } */
+
+        /* Style for status indicators (dots) */
+        .status-dot {
+            display: inline-block;
+            width: 0.6rem; /* Smaller dot */
+            height: 0.6rem;
+            border-radius: 50%;
+            margin-right: 0.5rem; /* Space between dot and text */
+            vertical-align: middle; /* Align dot with text */
         }
+        .dot-yellow { background-color: #facc15; } /* yellow-400 */
+        .dot-green { background-color: #4ade80; } /* green-400 */
 
     </style>
 </head>
@@ -128,10 +139,10 @@
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-200">
                     <h3 class="font-bold text-lg mb-2 text-gray-800">Como Funciona?</h3>
                     <ol class="list-decimal list-inside text-sm text-gray-600 space-y-1">
-                        <li>Expanda um pedido para ver as amostras.</li>
+                        <li>Expanda um pedido para ver as amostras (indicadas por <span class="status-dot dot-yellow"></span> Pendente ou <span class="status-dot dot-green"></span> Respondido).</li>
                         <li>Clique em <strong>"Atualizar"</strong> na amostra desejada (ou "Editar" se já respondeu).</li>
                         <li>Selecione uma opção de feedback e escreva a observação.</li>
-                        <li>Quando todas as amostras de um pedido forem respondidas, clique em <strong>"Sinalizar Gestor"</strong> para o notificar.</li>
+                        <li>Quando todas as amostras de um pedido forem respondidas (todas <span class="status-dot dot-green"></span>), clique em <strong>"Sinalizar Gestor"</strong> para o notificar.</li>
                         <li>Verifique as respostas do gestor clicando no <strong class="text-blue-600">sino 🔔</strong>.</li>
                     </ol>
                 </div>
@@ -570,7 +581,7 @@
              sortedOrderKeys.forEach(orderId => {
                  const order = groupedByOrder[orderId];
                 const orderGroup = document.createElement('div');
-                // *** MODIFICATION: Check if ALL samples within THIS specific order group are answered ***
+                // Check if ALL samples within THIS specific order group are answered
                 const allSamplesInThisOrderAnswered = order.samples.every(s => !s.isPending);
                 // Determine border color based on section type and completion status *within this order*
                 const statusColor = isPendingSection ? (allSamplesInThisOrderAnswered ? 'blue' : 'yellow') : 'green';
@@ -578,48 +589,55 @@
 
                 // Generate HTML for each sample row within the order
                 const samplesTableRowsHTML = order.samples.map(sample => {
-                    // Format quantity (handle potential commas, convert g/kg)
+                    // Format quantity
                     const qty = parseFloat(String(sample.qtde || '0').replace(',', '.'));
                     let formattedQty = '';
                     if (!isNaN(qty)) {
                         formattedQty = qty >= 1 || qty === 0 ? `${qty.toFixed(3).replace('.', ',')}kg` : `${Math.round(qty * 1000)}g`;
                     } else {
-                        formattedQty = sample.qtde || 'N/A'; // Fallback to original string
+                        formattedQty = sample.qtde || 'N/A';
                     }
 
                     // Display feedback/observation or "Pendente"
                     const feedbackDisplay = sample.isPending
-                        ? '<span class="text-yellow-600 font-semibold">Pendente</span>' // Make pending stand out
+                        ? '<span class="text-yellow-600 font-semibold">Pendente</span>'
                         : `<div>${sample.feedback || 'N/A'}</div><div class='text-gray-500 font-normal text-xs'>${sample.observation || ''}</div>`;
 
-                    // Show "Excluir" button only if feedback exists (and it's in pending section)
-                    const deleteButtonHtml = !sample.isPending && isPendingSection // Only show delete in pending section
+                    // Buttons
+                    const deleteButtonHtml = !sample.isPending && isPendingSection
                         ? `<button class="delete-btn bg-red-100 text-red-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-red-200" data-sample-id='${sample.id}'>Excluir</button>`
                         : '';
-                    // Button text: Atualizar if pending, Editar if answered
                     const updateButtonText = sample.isPending ? 'Atualizar' : 'Editar';
-                     // Add class if answered for styling
-                     const answeredClass = !sample.isPending ? 'answered-sample' : '';
+                    const updateButtonHtml = isPendingSection // Only show update/edit in pending section
+                        ? `<button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${updateButtonText}</button>`
+                        : '';
+
+                    // *** ADDED: Status dot and color logic ***
+                    const dotColorClass = sample.isPending ? 'dot-yellow' : 'dot-green';
 
                     return `
-                        <tr class="border-b last:border-b-0 ${answeredClass}">
+                        {/* Removed answeredClass from tr */}
+                        <tr class="border-b last:border-b-0">
                             <td class="p-3">
-                                <p class="font-semibold">${sample.produto}</p>
-                                <p class="text-xs text-gray-500">${sample.descricao || ''}</p>
+                                {/* Added status dot span */}
+                                <span class="status-dot ${dotColorClass}"></span>
+                                <div class="inline-block align-middle"> {/* Wrap text content */}
+                                    <p class="font-semibold">${sample.produto}</p>
+                                    <p class="text-xs text-gray-500">${sample.descricao || ''}</p>
+                                </div>
                             </td>
                             <td class="p-3">${formattedQty}</td>
                             <td class="p-3 hidden md:table-cell">${sample.originalStatus || 'N/A'}</td>
-                            <td class="p-3">${feedbackDisplay}</td> {/* Removed font-semibold from here */}
+                            <td class="p-3">${feedbackDisplay}</td>
                             <td class="p-3 text-right space-x-2">
-                                {/* Button is always visible in pending section */}
-                                ${isPendingSection ? `<button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${updateButtonText}</button>` : ''}
+                                ${updateButtonHtml}
                                 ${deleteButtonHtml}
                             </td>
                         </tr>
                     `;
                 }).join('');
 
-                // Assemble the order group HTML
+                // Assemble the order group HTML (no changes needed here for the dot)
                 orderGroup.innerHTML = `
                     <div class="p-4 flex justify-between items-center cursor-pointer order-header">
                         <div>
@@ -1091,6 +1109,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
