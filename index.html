@@ -313,6 +313,33 @@
         const normalizeText = (text = '') => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
         const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
 
+        // --- Main Dashboard Rendering Function ---
+        // Moved earlier to ensure it's defined before event listeners call it.
+        function processAndDisplayDashboard(samples, sessionId, sellerDocs = []) {
+            dashboard.classList.remove('hidden');
+            inputSection.classList.add('hidden');
+            connectionSection.classList.add('hidden');
+            sessionIdText.innerHTML = `ID da Sessão: <strong>${sessionId}</strong>`;
+
+            // Render all dashboard components
+            renderCharts(samples);
+            renderFeedbackDetails(samples);
+            renderSegmentCharts(samples);
+            renderSellersList(samples, sessionId, sellerDocs);
+            renderObservationsFeed(samples); // Now uses allSellerReplies cache
+            renderFullSamplesTable(samples);
+
+            populateSegmentFilters(); // Update segment dropdowns
+
+            // Re-apply table filter if one was active
+            const currentFilteredSeller = samplesTableTitle.dataset.filteredSeller;
+            if(currentFilteredSeller) {
+                filterSamplesTable(currentFilteredSeller);
+            } else {
+                filterSamplesTable(null); // Ensure table shows all if no filter active
+            }
+        }
+
         // --- Authentication & Data Loading ---
         async function attemptLogin(sessionId, sellerName, accessCode, isAutoLogin = false) {
             if (!sessionId || !sellerName || !accessCode) {
@@ -796,8 +823,9 @@
                  // UI update will be handled by the onSnapshot listener
 
             } catch (error) {
-                console.error("Falha ao atualizar a amostra:", error);
-                alert("Não foi possível guardar a alteração. A sua tela pode estar dessincronizada. Tente recarregar a página.");
+                console.error("Falha ao atualizar a amostra:", error); // Log detailed error
+                // Show user-friendly alert
+                alert(`Não foi possível guardar a alteração. A sua tela pode estar dessincronizada. Tente recarregar a página.\n\nDetalhe do erro: ${error.message}`);
                 // Re-enable delete button if the failed update was a delete attempt
                  const deleteButton = document.querySelector(`.delete-btn[data-sample-id='${sampleId}']`);
                  if(deleteButton) deleteButton.disabled = false;
@@ -1053,3 +1081,5 @@
     </script>
 </body>
 </html>
+
+
