@@ -220,7 +220,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         // Corrected imports
-        import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, serverTimestamp, query, where, writeBatch, limit, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, serverTimestamp, query, where, writeBatch, limit, addDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"; // Added Timestamp
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // IMPORTANT: Keep your Firebase config
@@ -312,33 +312,6 @@
         // --- Utility Functions ---
         const normalizeText = (text = '') => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
         const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
-
-        // --- Main Dashboard Rendering Function ---
-        // Moved earlier to ensure it's defined before event listeners call it.
-        function processAndDisplayDashboard(samples, sessionId, sellerDocs = []) {
-            dashboard.classList.remove('hidden');
-            inputSection.classList.add('hidden');
-            connectionSection.classList.add('hidden');
-            sessionIdText.innerHTML = `ID da Sessão: <strong>${sessionId}</strong>`;
-
-            // Render all dashboard components
-            renderCharts(samples);
-            renderFeedbackDetails(samples);
-            renderSegmentCharts(samples);
-            renderSellersList(samples, sessionId, sellerDocs);
-            renderObservationsFeed(samples); // Now uses allSellerReplies cache
-            renderFullSamplesTable(samples);
-
-            populateSegmentFilters(); // Update segment dropdowns
-
-            // Re-apply table filter if one was active
-            const currentFilteredSeller = samplesTableTitle.dataset.filteredSeller;
-            if(currentFilteredSeller) {
-                filterSamplesTable(currentFilteredSeller);
-            } else {
-                filterSamplesTable(null); // Ensure table shows all if no filter active
-            }
-        }
 
         // --- Authentication & Data Loading ---
         async function attemptLogin(sessionId, sellerName, accessCode, isAutoLogin = false) {
@@ -675,7 +648,8 @@
                     }
                     e.currentTarget.disabled = true; // Disable button during update
                     // Reset feedback fields and mark as pending
-                    await updateSampleData(sampleId, { isPending: true, feedback: '', observation: '', finalizedByVendor: false, editedAfterCompletion: false }); // Wait for update
+                    // *** CORRECTION: Use new Date() for timestamp ***
+                    await updateSampleData(sampleId, { isPending: true, feedback: '', observation: '', finalizedByVendor: false, editedAfterCompletion: false, lastUpdate: new Date() }); // Wait for update
                     // UI will update via listener
                 });
             });
@@ -707,7 +681,7 @@
                          await setDoc(notifRef, {
                              message,
                              color: 'purple', // Use purple for signaled orders
-                             timestamp: serverTimestamp(),
+                             timestamp: serverTimestamp(), // serverTimestamp is OK here as it's not inside an array
                              triggerPopup: false // Don't trigger browser popup for this
                          });
 
@@ -774,7 +748,7 @@
                 feedback: newFeedback,
                 observation: newObservation,
                 editedAfterCompletion: wasEdited, // Store edit status
-                lastUpdate: serverTimestamp() // Add/update timestamp
+                lastUpdate: new Date() // *** CORRECTION: Use client-side timestamp ***
             };
 
             feedbackModal.classList.add('hidden'); // Close modal immediately
@@ -791,7 +765,7 @@
                     await setDoc(notifRef, {
                         message,
                         color: 'orange', // Orange color for edits
-                        timestamp: serverTimestamp(),
+                        timestamp: serverTimestamp(), // serverTimestamp is OK here
                         triggerPopup: true // Trigger browser popup for manager on edits
                     });
                     console.log("Notificação de edição enviada.");
@@ -811,7 +785,12 @@
                 }
                 // Create a new array with the updated sample
                 const updatedSamples = [...allSellerSamples];
-                updatedSamples[sampleIndex] = { ...updatedSamples[sampleIndex], ...updates };
+                // *** Ensure lastUpdate is a Firestore Timestamp if using new Date() ***
+                const updatesWithTimestamp = {
+                     ...updates,
+                     lastUpdate: updates.lastUpdate instanceof Date ? Timestamp.fromDate(updates.lastUpdate) : updates.lastUpdate // Convert Date to Timestamp
+                 };
+                updatedSamples[sampleIndex] = { ...updatedSamples[sampleIndex], ...updatesWithTimestamp };
 
                 // Update Firestore with the entire array
                 await updateDoc(currentSellerDocRef, { amostras: updatedSamples });
@@ -979,7 +958,7 @@
                     originalManagerName: currentNotificationForReply.managerName,
                     pedido: currentNotificationForReply.pedido,
                     produto: currentNotificationForReply.produto,
-                    timestamp: serverTimestamp(),
+                    timestamp: serverTimestamp(), // OK here
                     readByManager: false // Manager hasn't read this yet
                 };
                 const managerRepliesRef = collection(db, "sessoes", currentSessionId, "respostasVendedor");
@@ -1081,5 +1060,8 @@
     </script>
 </body>
 </html>
+
+
+
 
 
