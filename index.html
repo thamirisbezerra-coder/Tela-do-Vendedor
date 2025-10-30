@@ -133,10 +133,9 @@
                     <h3 class="font-bold text-lg mb-2 text-gray-800">Como Funciona?</h3>
                     <ol class="list-decimal list-inside text-sm text-gray-600 space-y-1">
                         <li>Expanda um pedido para ver as amostras (indicadas por <span class="status-dot dot-yellow"></span> Pendente ou <span class="status-dot dot-green"></span> Respondido).</li>
-                        <li>Clique em <strong>"Atualizar"</strong> ou <strong>"Editar"</strong> na amostra desejada.</li>
+                        <li>Clique em <strong>"Atualizar"</strong> na amostra desejada (ou "Editar" se já respondeu).</li>
                         <li>Selecione uma opção de feedback e escreva a observação.</li>
-                        <li>Quando todas as amostras de um pedido estiverem respondidas (<span class="status-dot dot-green"></span>), clique em <strong>"Sinalizar Gestor"</strong>.</li>
-                        <li>Mesmo após sinalizar, você pode <strong>Editar</strong> ou <strong>Excluir</strong> um feedback na seção "Concluídos". Excluir reabrirá a pendência do pedido.</li>
+                        <li>Quando todas as amostras de um pedido forem respondidas (todas <span class="status-dot dot-green"></span>), clique em <strong>"Sinalizar Gestor"</strong> para o notificar.</li>
                         <li>Verifique as respostas do gestor clicando no <strong class="text-blue-600">sino 🔔</strong>.</li>
                     </ol>
                 </div>
@@ -460,11 +459,13 @@
                     document.getElementById('completed-section').classList.add('hidden');
                 } else {
                     noDataMessage.classList.add('hidden');
-                    // Separate samples into pending (not finalized) and completed (finalized)
+                    // *** MODIFICATION: Filter samples differently for rendering ***
+                    // Pending section: Samples NOT finalized by vendor
                     const pendingSamplesForDisplay = allSellerSamples.filter(s => !s.finalizedByVendor);
+                    // Completed section: Samples finalized by vendor
                     const completedSamples = allSellerSamples.filter(s => s.finalizedByVendor);
 
-                    renderOrders(pendingSamplesForDisplay, 'pending');
+                    renderOrders(pendingSamplesForDisplay, 'pending'); // Pass only non-finalized
                     renderOrders(completedSamples, 'completed');
                 }
             }, (error) => {
@@ -526,7 +527,7 @@
         // --- UI Rendering Functions ---
 
         // Render pending or completed orders list
-        function renderOrders(samplesToDisplay, type) {
+        function renderOrders(samplesToDisplay, type) { // Changed input name
             const isPendingSection = type === 'pending';
             const container = document.getElementById(`${type}-orders-list`);
             const section = document.getElementById(`${type}-section`);
@@ -596,13 +597,13 @@
                         : `<div>${sample.feedback || 'N/A'}</div><div class='text-gray-500 font-normal text-xs'>${sample.observation || ''}</div>`;
 
                     // Buttons
-                    const deleteButtonHtml = !sample.isPending // Show delete if not pending (in either section)
+                    const deleteButtonHtml = !sample.isPending && isPendingSection
                         ? `<button class="delete-btn bg-red-100 text-red-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-red-200" data-sample-id='${sample.id}'>Excluir</button>`
                         : '';
                     const updateButtonText = sample.isPending ? 'Atualizar' : 'Editar';
-                    // Show Update/Edit button in both sections
-                    const updateButtonHtml = `<button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${updateButtonText}</button>`;
-
+                    const updateButtonHtml = isPendingSection // Only show update/edit in pending section
+                        ? `<button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${updateButtonText}</button>`
+                        : '';
 
                     // Status dot and color logic
                     const dotColorClass = sample.isPending ? 'dot-yellow' : 'dot-green';
@@ -656,7 +657,7 @@
                         </div>` : ''}
                         ${!isPendingSection ? `
                         <div class="p-3 border-t text-xs text-gray-500 bg-gray-50 text-center">
-                             Este pedido já foi sinalizado para o gestor. Edite ou exclua um feedback se necessário.
+                             Este pedido já foi sinalizado para o gestor.
                         </div>` : ''}
                     </div>
                 `;
@@ -685,19 +686,12 @@
              container.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const sampleId = e.currentTarget.dataset.sampleId;
-                    if (!confirm('Tem a certeza que quer excluir este feedback e voltar a amostra para pendente? O pedido voltará para a seção de pendências.')) { // Updated confirmation
+                    if (!confirm('Tem a certeza que quer excluir este feedback e voltar a amostra para pendente?')) {
                         return;
                     }
                     e.currentTarget.disabled = true;
                     // Reset fields and use client-side timestamp
-                    await updateSampleData(sampleId, {
-                        isPending: true,
-                        feedback: '',
-                        observation: '',
-                        finalizedByVendor: false, // Move back to pending section
-                        editedAfterCompletion: false,
-                        lastUpdate: new Date()
-                    });
+                    await updateSampleData(sampleId, { isPending: true, feedback: '', observation: '', finalizedByVendor: false, editedAfterCompletion: false, lastUpdate: new Date() });
                 });
             });
               container.querySelectorAll('.signal-manager-btn').forEach(btn => {
@@ -706,18 +700,30 @@
                       e.currentTarget.disabled = true;
                       e.currentTarget.textContent = 'Sinalizado!';
 
-                      // Update samples locally first for responsiveness
-                      const updatedSamplesLocally = allSellerSamples.map(sample => {
+                      // *** CORREÇÃO: Ler o estado MAIS ATUAL de allSellerSamples ***
+                      // Não há necessidade de criar 'updatedSamplesLocally' separadamente se confiarmos no 'allSellerSamples'
+                      // que é atualizado pelo listener onSnapshot.
+                      // O problema é que 'allSellerSamples' pode estar obsoleto NO MOMENTO DO CLIQUE.
+                      
+                      // *** MELHOR ABORDAGEM: Criar a matriz de atualização com base no estado atual ***
+                      // O listener (onSnapshot) é a fonte da verdade para 'allSellerSamples'.
+                      // Quando este botão está visível, 'allSellerSamples' DEVE estar correto.
+                      const updatedSamplesForFirestore = allSellerSamples.map(sample => {
                           if (sample.pedido === orderId && !sample.isPending) { // Only mark finalized if already answered
                               return { ...sample, finalizedByVendor: true };
                           }
                           return sample;
                       });
-                      allSellerSamples = updatedSamplesLocally; // Update local cache
+                      
+                      // *** CORREÇÃO: Remover a mutação do estado local ***
+                      // A linha 'allSellerSamples = updatedSamplesLocally;' foi removida.
+                      // O listener 'onSnapshot' será o único a atualizar 'allSellerSamples'
+                      // após a escrita no Firestore.
 
                       // Update Firestore
                       try {
-                          await updateDoc(currentSellerDocRef, { amostras: updatedSamplesLocally });
+                          // Usar a nova matriz 'updatedSamplesForFirestore'
+                          await updateDoc(currentSellerDocRef, { amostras: updatedSamplesForFirestore });
                           console.log(`Pedido ${orderId} marcado como finalizado pelo vendedor.`);
 
                           // Send notification to manager
@@ -735,9 +741,11 @@
                       } catch(error) {
                           console.error("Erro ao sinalizar gestor ou atualizar amostras:", error);
                           alert("Erro ao sinalizar. Tente novamente.");
+                          // Re-enable o botão no erro
                           e.currentTarget.disabled = false;
                           e.currentTarget.textContent = 'Sinalizar Gestor';
-                          // Consider reverting local state on error
+                          // O listener (onSnapshot) irá reverter a UI para o estado anterior
+                          // se a escrita falhar, então não precisamos reverter localmente.
                       }
                        // Re-rendering happens via listener
                   });
@@ -778,46 +786,43 @@
         async function saveFeedback() { // Renamed from original save-button listener
             if (saveFeedbackBtn.disabled) return;
 
-             // Determine if this is an edit of a previously completed feedback OR a new feedback on a finalized order
-             const isEditing = !currentSample.isPending; // Check if it was already "not pending" before opening modal
+             // Determine if this is an edit of a previously completed feedback
+             const isEditing = !currentSample.isPending;
              const oldFeedback = currentSample.feedback;
              const oldObservation = currentSample.observation;
              const newFeedback = selectedFeedback;
              const newObservation = observationInput.value.trim();
              // Mark as edited only if feedback or observation actually changed
              const wasEdited = isEditing && (oldFeedback !== newFeedback || oldObservation !== newObservation);
-             // Also mark as edited if the sample was already finalized by the vendor
-             const editedAfterFinalized = currentSample.finalizedByVendor && (oldFeedback !== newFeedback || oldObservation !== newObservation);
 
             const updates = {
                 isPending: false, // Mark as no longer pending
                 feedback: newFeedback,
                 observation: newObservation,
-                // Keep existing finalizedByVendor status unless deleting
-                editedAfterCompletion: editedAfterFinalized, // Only mark if edited *after* signaling manager
+                editedAfterCompletion: wasEdited, // Store edit status
                 lastUpdate: new Date() // *** CORRECTION: Use client-side timestamp ***
             };
 
             feedbackModal.classList.add('hidden'); // Close modal immediately
             await updateSampleData(currentSample.id, updates); // Update Firestore
 
-            // Send notification to manager *only* if it was edited *after* being finalized/signaled
-            if (editedAfterFinalized) {
+            // Send notification to manager *only* if it was an edit
+            if (wasEdited) {
                 try {
                     const sellerName = currentSellerOriginalName;
-                    const message = `<strong>${sellerName}</strong> <i>editou</i> o feedback (após sinalizar) para <strong>${currentSample.produto}</strong> (Pedido ${currentSample.pedido}): ${newFeedback}`;
-                    const notifId = sanitizeForFirebaseId(`edit-after-final-${currentSample.id}-${Date.now()}`);
+                    const message = `<strong>${sellerName}</strong> <i>editou</i> o feedback para <strong>${currentSample.produto}</strong> (Pedido ${currentSample.pedido}): ${newFeedback}`;
+                    const notifId = sanitizeForFirebaseId(`edit-${currentSample.id}-${Date.now()}`);
                     const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
 
                     await setDoc(notifRef, {
                         message,
-                        color: 'red', // Use red for edits after finalization
+                        color: 'orange', // Orange color for edits
                         timestamp: serverTimestamp(), // serverTimestamp is OK here
-                        triggerPopup: true // Trigger browser popup for manager on these critical edits
+                        triggerPopup: true // Trigger browser popup for manager on edits
                     });
-                    console.log("Notificação de edição PÓS-FINALIZAÇÃO enviada.");
+                    console.log("Notificação de edição enviada.");
                 } catch (notifError) {
-                    console.error("Erro ao enviar notificação de edição PÓS-FINALIZAÇÃO:", notifError);
+                    console.error("Erro ao enviar notificação de edição:", notifError);
                     // Log error but don't block user
                 }
             }
@@ -826,9 +831,15 @@
         // --- Generic Update Function (Handles Firestore update and local cache) ---
         async function updateSampleData(sampleId, updates) {
             try {
+                // *** IMPORTANTE: A fonte da verdade (allSellerSamples) pode estar obsoleta ***
+                // Esta função é a raiz da condição de corrida.
+                // Ao ler 'allSellerSamples', estamos a ler um cache local.
+                // A correção "real" seria usar uma transação do Firestore.
+                // Sem transações, esta função *sempre* terá risco de race condition.
+                
                 const sampleIndex = allSellerSamples.findIndex(s => s.id === sampleId);
                 if (sampleIndex === -1) {
-                    throw new Error("Sample not found in local cache for update.");
+                    throw new Error("Amostra não encontrada no cache local para atualização.");
                 }
                 // Create a new array with the updated sample
                 const updatedSamples = [...allSellerSamples];
@@ -843,9 +854,8 @@
                 // Update Firestore with the entire array
                 await updateDoc(currentSellerDocRef, { amostras: updatedSamples });
 
-                // Update local state *after* successful Firestore update
-                // The listener will eventually update this, but doing it here provides quicker UI feedback if needed
-                // allSellerSamples = updatedSamples; // Optional: Update local state immediately
+                // NENHUMA ATUALIZAÇÃO LOCAL DE 'allSellerSamples' AQUI.
+                // O 'onSnapshot' listener fará isso.
 
                 console.log(`Sample ${sampleId} updated successfully.`);
                  // UI update will be handled by the onSnapshot listener
@@ -1109,6 +1119,7 @@
     </script>
 </body>
 </html>
+
 
 
 
