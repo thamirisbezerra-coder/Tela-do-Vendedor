@@ -601,9 +601,12 @@
                         ? `<button class="delete-btn bg-red-100 text-red-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-red-200" data-sample-id='${sample.id}'>Excluir</button>`
                         : '';
                     const updateButtonText = sample.isPending ? 'Atualizar' : 'Editar';
-                    const updateButtonHtml = isPendingSection // Only show update/edit in pending section
-                        ? `<button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${updateButtonText}</button>`
-                        : '';
+                    
+                    // *** CORREÇÃO AQUI ***
+                    // O botão agora é sempre renderizado. O texto ('Atualizar' ou 'Editar')
+                    // é controlado pela flag 'sample.isPending'.
+                    // Itens concluídos sempre terão 'sample.isPending = false', mostrando "Editar".
+                    const updateButtonHtml = `<button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${updateButtonText}</button>`;
 
                     // Status dot and color logic
                     const dotColorClass = sample.isPending ? 'dot-yellow' : 'dot-green';
@@ -1119,6 +1122,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
