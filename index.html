@@ -229,11 +229,22 @@
          </div>
      </div>
 
+    <!-- Custom Alert/Modal for errors -->
+    <div id="custom-alert" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-bold mb-4 text-red-600">Erro na Operação</h3>
+            <p id="custom-alert-message" class="text-gray-700 mb-6">Ocorreu um erro. Tente novamente.</p>
+            <div class="flex justify-end">
+                <button id="custom-alert-ok-btn" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg">OK</button>
+            </div>
+        </div>
+    </div>
+
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        // Corrected imports
-        import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, serverTimestamp, query, where, writeBatch, limit, addDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"; // Added Timestamp
+        // *** CORREÇÃO: Adicionado 'runTransaction' à lista de importação ***
+        import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, serverTimestamp, query, where, writeBatch, limit, addDoc, Timestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // IMPORTANT: Keep your Firebase config
@@ -311,6 +322,11 @@
         const cancelFeedbackModalBtn = document.getElementById('cancel-modal-btn'); // Renamed for clarity
         const saveFeedbackBtn = document.getElementById('save-button'); // Renamed for clarity
 
+        // Custom Alert Elements
+        const customAlert = document.getElementById('custom-alert');
+        const customAlertMessage = document.getElementById('custom-alert-message');
+        const customAlertOkBtn = document.getElementById('custom-alert-ok-btn');
+
         // --- State Variables ---
         let currentSample = null; // Sample being edited in feedback modal
         let selectedFeedback = null; // Feedback selected in modal
@@ -325,6 +341,14 @@
         // --- Utility Functions ---
         const normalizeText = (text = '') => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
         const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
+
+        // Custom alert function
+        function showAlert(message) {
+            customAlertMessage.textContent = message;
+            customAlert.classList.remove('hidden');
+        }
+        customAlertOkBtn.addEventListener('click', () => customAlert.classList.add('hidden'));
+
 
         // --- Authentication & Data Loading ---
         async function attemptLogin(sessionId, sellerName, accessCode, isAutoLogin = false) {
@@ -689,9 +713,17 @@
              container.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const sampleId = e.currentTarget.dataset.sampleId;
-                    if (!confirm('Tem a certeza que quer excluir este feedback e voltar a amostra para pendente?')) {
-                        return;
+                    // Usar o modal customizado em vez de confirm()
+                    if (customAlert.classList.contains('hidden')) { // Evitar sobreposição
+                        // Vamos usar um confirm simples por enquanto, pois não temos um modal de confirmação
+                        // O ideal seria criar um modal de "Confirmar"
+                        if (!confirm('Tem a certeza que quer excluir este feedback e voltar a amostra para pendente?')) {
+                             return;
+                        }
+                    } else {
+                         return; // Modal de alerta já está aberto
                     }
+                    
                     e.currentTarget.disabled = true;
                     // Reset fields and use client-side timestamp
                     await updateSampleData(sampleId, { isPending: true, feedback: '', observation: '', finalizedByVendor: false, editedAfterCompletion: false, lastUpdate: new Date() });
@@ -702,53 +734,53 @@
                       const orderId = e.currentTarget.dataset.orderId;
                       e.currentTarget.disabled = true;
                       e.currentTarget.textContent = 'Sinalizado!';
-
-                      // *** CORREÇÃO: Ler o estado MAIS ATUAL de allSellerSamples ***
-                      // Não há necessidade de criar 'updatedSamplesLocally' separadamente se confiarmos no 'allSellerSamples'
-                      // que é atualizado pelo listener onSnapshot.
-                      // O problema é que 'allSellerSamples' pode estar obsoleto NO MOMENTO DO CLIQUE.
                       
-                      // *** MELHOR ABORDAGEM: Criar a matriz de atualização com base no estado atual ***
-                      // O listener (onSnapshot) é a fonte da verdade para 'allSellerSamples'.
-                      // Quando este botão está visível, 'allSellerSamples' DEVE estar correto.
-                      const updatedSamplesForFirestore = allSellerSamples.map(sample => {
-                          if (sample.pedido === orderId && !sample.isPending) { // Only mark finalized if already answered
-                              return { ...sample, finalizedByVendor: true };
-                          }
-                          return sample;
-                      });
+                      // *** CORREÇÃO: Esta função agora deve usar uma transação para marcar como 'finalized' ***
+                      // A abordagem de ler 'allSellerSamples' localmente é insegura.
+                      // Vamos chamar 'updateSampleData' para cada amostra. 
+                      // Não, isso é ineficiente.
+                      // A melhor abordagem é uma transação que atualiza todas de uma vez.
                       
-                      // *** CORREÇÃO: Remover a mutação do estado local ***
-                      // A linha 'allSellerSamples = updatedSamplesLocally;' foi removida.
-                      // O listener 'onSnapshot' será o único a atualizar 'allSellerSamples'
-                      // após a escrita no Firestore.
-
-                      // Update Firestore
                       try {
-                          // Usar a nova matriz 'updatedSamplesForFirestore'
-                          await updateDoc(currentSellerDocRef, { amostras: updatedSamplesForFirestore });
-                          console.log(`Pedido ${orderId} marcado como finalizado pelo vendedor.`);
+                        await runTransaction(db, async (transaction) => {
+                            const sellerDoc = await transaction.get(currentSellerDocRef);
+                            if (!sellerDoc.exists()) {
+                                throw "Documento do vendedor não existe!";
+                            }
+                            const currentSamples = sellerDoc.data().amostras || [];
+                            
+                            // Mapear e atualizar apenas as amostras relevantes
+                            const updatedSamplesArray = currentSamples.map(sample => {
+                                if (sample.pedido === orderId && !sample.isPending) {
+                                    return { ...sample, finalizedByVendor: true };
+                                }
+                                return sample;
+                            });
 
-                          // Send notification to manager
-                          const sellerName = currentSellerOriginalName;
-                          const message = `<strong>${sellerName}</strong> sinalizou o pedido: <strong>${orderId}</strong> como concluído.`;
-                          const notifId = sanitizeForFirebaseId(`${sellerName}-${orderId}-concluido-${Date.now()}`);
-                          const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
-                          await setDoc(notifRef, {
-                              message,
-                              color: 'purple',
-                              timestamp: serverTimestamp(), // OK here
-                              triggerPopup: false
-                          });
+                            // Atualizar o documento com a nova matriz
+                            transaction.update(currentSellerDocRef, { amostras: updatedSamplesArray });
+                        });
+
+                        console.log(`Pedido ${orderId} marcado como finalizado pelo vendedor (via transação).`);
+
+                        // Enviar notificação ao gestor (fora da transação)
+                        const sellerName = currentSellerOriginalName;
+                        const message = `<strong>${sellerName}</strong> sinalizou o pedido: <strong>${orderId}</strong> como concluído.`;
+                        const notifId = sanitizeForFirebaseId(`${sellerName}-${orderId}-concluido-${Date.now()}`);
+                        const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
+                        await setDoc(notifRef, {
+                            message,
+                            color: 'purple',
+                            timestamp: serverTimestamp(),
+                            triggerPopup: false
+                        });
 
                       } catch(error) {
-                          console.error("Erro ao sinalizar gestor ou atualizar amostras:", error);
-                          alert("Erro ao sinalizar. Tente novamente.");
-                          // Re-enable o botão no erro
-                          e.currentTarget.disabled = false;
-                          e.currentTarget.textContent = 'Sinalizar Gestor';
+                          console.error("Erro ao sinalizar gestor (transação falhou):", error);
+                          showAlert("Erro ao sinalizar. Tente novamente.");
                           // O listener (onSnapshot) irá reverter a UI para o estado anterior
                           // se a escrita falhar, então não precisamos reverter localmente.
+                          // O botão será re-renderizado pelo listener, então não precisamos reativá-lo aqui.
                       }
                        // Re-rendering happens via listener
                   });
@@ -831,43 +863,59 @@
             }
         }
 
-        // --- Generic Update Function (Handles Firestore update and local cache) ---
+        // *** FUNÇÃO DE ATUALIZAÇÃO CORRIGIDA USANDO TRANSAÇÃO ***
         async function updateSampleData(sampleId, updates) {
+            if (!currentSellerDocRef) {
+                console.error("Referência do vendedor não definida. Abortando atualização.");
+                showAlert("Erro: Não foi possível encontrar a referência do vendedor. Tente recarregar a página.");
+                return;
+            }
+
             try {
-                // *** IMPORTANTE: A fonte da verdade (allSellerSamples) pode estar obsoleta ***
-                // Esta função é a raiz da condição de corrida.
-                // Ao ler 'allSellerSamples', estamos a ler um cache local.
-                // A correção "real" seria usar uma transação do Firestore.
-                // Sem transações, esta função *sempre* terá risco de race condition.
-                
-                const sampleIndex = allSellerSamples.findIndex(s => s.id === sampleId);
-                if (sampleIndex === -1) {
-                    throw new Error("Amostra não encontrada no cache local para atualização.");
-                }
-                // Create a new array with the updated sample
-                const updatedSamples = [...allSellerSamples];
-                // *** Ensure lastUpdate is a Firestore Timestamp if using new Date() ***
-                const updatesWithTimestamp = {
-                     ...updates,
-                     // Convert client-side Date to Firestore Timestamp before saving
-                     lastUpdate: updates.lastUpdate instanceof Date ? Timestamp.fromDate(updates.lastUpdate) : updates.lastUpdate
-                 };
-                updatedSamples[sampleIndex] = { ...updatedSamples[sampleIndex], ...updatesWithTimestamp };
+                // Iniciar a transação
+                await runTransaction(db, async (transaction) => {
+                    // 1. Ler o documento do vendedor DENTRO da transação
+                    const sellerDoc = await transaction.get(currentSellerDocRef);
+                    if (!sellerDoc.exists()) {
+                        throw new Error("Documento do vendedor não existe!");
+                    }
 
-                // Update Firestore with the entire array
-                await updateDoc(currentSellerDocRef, { amostras: updatedSamples });
+                    // 2. Obter a matriz de amostras ATUAL do banco de dados
+                    const currentSamples = sellerDoc.data().amostras || [];
+                    
+                    // 3. Encontrar o índice da amostra a ser atualizada
+                    const sampleIndex = currentSamples.findIndex(s => s.id === sampleId);
+                    
+                    if (sampleIndex === -1) {
+                         // A amostra não foi encontrada. Isso pode acontecer se foi excluída
+                         // em outra aba. Lançar um erro para falhar a transação.
+                         throw new Error(`Amostra ${sampleId} não encontrada no banco de dados. Os seus dados podem estar dessincronizados.`);
+                    }
 
-                // NENHUMA ATUALIZAÇÃO LOCAL DE 'allSellerSamples' AQUI.
-                // O 'onSnapshot' listener fará isso.
+                    // 4. Preparar as atualizações com o timestamp do Firestore
+                    const updatesWithTimestamp = {
+                        ...updates,
+                        // Converter Date do cliente para Timestamp do Firestore
+                        lastUpdate: updates.lastUpdate instanceof Date ? Timestamp.fromDate(updates.lastUpdate) : updates.lastUpdate
+                    };
 
-                console.log(`Sample ${sampleId} updated successfully.`);
-                 // UI update will be handled by the onSnapshot listener
+                    // 5. Criar a NOVA matriz de amostras
+                    const updatedSamplesArray = [...currentSamples];
+                    updatedSamplesArray[sampleIndex] = { ...updatedSamplesArray[sampleIndex], ...updatesWithTimestamp };
+
+                    // 6. Atualizar o documento com a nova matriz DENTRO da transação
+                    transaction.update(currentSellerDocRef, { amostras: updatedSamplesArray });
+                });
+
+                // Se a transação for bem-sucedida, o listener onSnapshot cuidará da atualização da UI.
+                console.log(`Transação bem-sucedida para a amostra ${sampleId}.`);
 
             } catch (error) {
-                console.error("Falha ao atualizar a amostra:", error); // Log detailed error
-                // Show user-friendly alert
-                alert(`Não foi possível guardar a alteração. A sua tela pode estar dessincronizada. Tente recarregar a página.\n\nDetalhe do erro: ${error.message}`);
-                // Re-enable delete button if the failed update was a delete attempt
+                console.error("Falha na transação ao atualizar a amostra:", error);
+                // Mostrar alerta ao usuário
+                showAlert(`Não foi possível guardar a alteração devido a um conflito de dados ou erro. Tente novamente.\n\nDetalhe do erro: ${error.message || error}`);
+                
+                // Re-ativar o botão de exclusão se a atualização falhada foi uma exclusão
                  const deleteButton = document.querySelector(`.delete-btn[data-sample-id='${sampleId}']`);
                  if(deleteButton) deleteButton.disabled = false;
             }
@@ -1004,7 +1052,7 @@
 
             const replyMessage = sellerReplyMessageInput.value.trim();
             if (!replyMessage) {
-                alert("Por favor, escreva a sua resposta."); // Simple alert for now
+                showAlert("Por favor, escreva a sua resposta."); // Use custom alert
                 return;
             }
 
@@ -1046,7 +1094,7 @@
 
             } catch (error) {
                 console.error("Erro ao enviar resposta ao gestor:", error);
-                alert("Ocorreu um erro ao enviar a resposta. Tente novamente.");
+                showAlert("Ocorreu um erro ao enviar a resposta. Tente novamente.");
             } finally {
                 sendSellerReplyBtn.disabled = false;
                 sendSellerReplyBtn.textContent = 'Enviar Resposta';
@@ -1122,6 +1170,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
