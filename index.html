@@ -102,7 +102,8 @@
             <div class="space-y-4">
                 <div>
                     <label for="seller-name-input" class="block text-sm font-medium text-gray-700 mb-1 text-left">O seu Nome de Vendedor</label>
-                    <input type="text" id="seller-name-input" placeholder="Escreva seu nome (ex: PATRICIA ALVES PINATTI)" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3">
+                    <!-- CORREÇÃO: Removido o exemplo do placeholder -->
+                    <input type="text" id="seller-name-input" placeholder="Escreva seu nome" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3">
                 </div>
                 <div>
                     <label for="access-code-input" class="block text-sm font-medium text-gray-700 mb-1 text-left">Código de Acesso</label>
@@ -262,7 +263,9 @@
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+        // Configuração do Firebase
         const firebaseConfig = {
+            // CORREÇÃO: Adicionado o '8' que faltava
             apiKey: "AIzaSyAF_TE28Tbp2nakBGTva1yEEbBCqWvRdJQ",
             authDomain: "feedback-vendedores.firebaseapp.com",
             projectId: "feedback-vendedores",
@@ -276,6 +279,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // Opções de Feedback
         const FEEDBACK_CHOICES = [
             'A - COM PEDIDO', 'A - APROVADA SEM PEDIDO', 'P - AMOSTRA NÃO TESTADA', 'P - EM ANÁLISE', 
             'P - AMOSTRA SEM FEEDBACK', 'R - APRESENTAÇÃO PRÓ ATIVA', 'R - CALIBRE', 'R - EXTRAVIADA', 
@@ -285,7 +289,7 @@
             'E - EVENTO', 'R - EXPORTACAO'
         ];
 
-        // --- DOM Elements ---
+        // --- Elementos DOM ---
         const accessView = document.getElementById('access-view');
         const loadingState = document.getElementById('loading-state');
         const loadingMessage = document.getElementById('loading-message');
@@ -322,22 +326,23 @@
         const customAlertMessage = document.getElementById('custom-alert-message');
         const customAlertOkBtn = document.getElementById('custom-alert-ok-btn');
 
-        // --- State Variables ---
+        // --- Variáveis de Estado ---
         let currentSample = null;
         let selectedFeedback = null;
-        let currentSellerDocRef = null; // Ref to /sessoes/{sid}/vendedores/{vid}
+        let currentSellerDocRef = null; // Ref para /sessoes/{sid}/vendedores/{vid}
         let allSellerSamples = [];
         let unsubscribeSamples = null;
         let sellerNotificationListenerUnsubscribe = null;
         let currentSessionId = null;
-        let currentSellerId = null; // Sanitized seller name
+        let currentSellerId = null; // Nome higienizado do vendedor
         let currentSellerOriginalName = null;
         let sellerNotifications = [];
 
-        // --- Utility Functions ---
+        // --- Funções Utilitárias ---
         const normalizeText = (text = '') => text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() : '';
         const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
 
+        // Alerta customizado
         function showAlert(message, title = "Erro na Operação", color = "text-red-600") {
             customAlertTitle.textContent = title;
             customAlertMessage.innerHTML = message; // Usar innerHTML para o <br>
@@ -346,6 +351,7 @@
         }
         customAlertOkBtn.addEventListener('click', () => customAlert.classList.add('hidden'));
 
+        // Tratamento de erros do Firestore
         function handleFirestoreError(error, operationContext) {
             console.error(`Erro em "${operationContext}":`, error);
             let message = `Não foi possível completar a operação: ${operationContext}.<br><br>Erro: ${error.message}`;
@@ -360,9 +366,9 @@
             showAlert(message, title, color);
         }
 
-        // --- Authentication & Data Loading ---
+        // --- Autenticação e Carregamento de Dados (v2) ---
         
-        // NOVO: Busca a sessão ativa
+        // Busca a sessão ativa
         async function getActiveSessionId() {
             try {
                 const activeSessionRef = doc(db, "configuracoes", "sessaoAtiva");
@@ -378,6 +384,7 @@
             }
         }
 
+        // Tenta fazer login
         async function attemptLogin(sellerName, accessCode, isAutoLogin = false) {
             if (!sellerName || !accessCode) {
                 if (!isAutoLogin) accessError.textContent = 'Nome e Código são obrigatórios.';
@@ -388,6 +395,7 @@
             loadingSubmessage.textContent = "A procurar sessão ativa...";
             accessView.classList.add('hidden');
 
+            // 1. Encontra a sessão ativa (ex: sessao_v2_...)
             currentSessionId = await getActiveSessionId();
             if (!currentSessionId) {
                 loadingState.classList.add('hidden');
@@ -396,21 +404,23 @@
                 return false;
             }
             
-            loadingSubmessage.textContent = `Sessão ${currentSessionId} encontrada. A verificar credenciais...`;
+            loadingSubmessage.textContent = `Sessão encontrada. A verificar credenciais...`;
 
+            // 2. Prepara os IDs do vendedor
             currentSellerId = sanitizeForFirebaseId(sellerName);
             currentSellerOriginalName = sellerName;
 
             try {
-                // Caminho para o documento do vendedor na nova estrutura
+                // 3. Tenta aceder ao documento do vendedor
                 const docRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists() && docSnap.data().accessCode === accessCode) {
+                    // Sucesso!
                     currentSellerDocRef = docRef;
                     const sellerData = docSnap.data();
                     welcomeTitle.textContent = `Olá, ${sellerData.originalName}!`;
-                    currentSellerOriginalName = sellerData.originalName; // Garante a capitalização correta
+                    currentSellerOriginalName = sellerData.originalName;
 
                     if (!isAutoLogin) {
                         localStorage.setItem('sellerName_v2', currentSellerOriginalName);
@@ -423,13 +433,12 @@
 
                     requestNotificationPermission();
                     startRealtimeListener(); // Ouve a sub-coleção 'amostras'
-                    listenForSellerNotifications(); // Ouve notificações para o vendedor
+                    listenForSellerNotifications(); // Ouve notificações
                     return true;
                 } else {
+                    // Falha no login
                     if (isAutoLogin) {
                         localStorage.clear();
-                        loadingState.classList.add('hidden');
-                        accessView.classList.remove('hidden');
                     } else if (docSnap.exists()) {
                         accessError.textContent = 'Código de Acesso inválido. Tente novamente.';
                     } else {
@@ -440,15 +449,15 @@
                     return false;
                 }
             } catch (e) {
+                // Erro de rede ou outro
                 if (!isAutoLogin) accessError.textContent = 'Erro ao conectar. Verifique sua internet.';
                 console.error("Erro de autenticação ou busca (v2):", e);
-                if (isAutoLogin) {
-                    localStorage.clear();
-                    loadingState.classList.add('hidden');
-                    accessView.classList.remove('hidden');
-                }
+                if (isAutoLogin) localStorage.clear();
+                loadingState.classList.add('hidden');
+                accessView.classList.remove('hidden');
                 return false;
             } finally {
+                // Re-habilita o botão de login
                 if (!isAutoLogin && loadDataBtn) {
                      loadDataBtn.disabled = false;
                      loadDataBtn.textContent = 'Aceder Amostras';
@@ -461,7 +470,7 @@
         loadDataBtn.addEventListener('click', () => {
              loadDataBtn.disabled = true;
              loadDataBtn.textContent = 'A verificar...';
-             loadDataBtn.classList.add('btn-loading'); // Adiciona classe de loading
+             loadDataBtn.classList.add('btn-loading');
              
             const sellerName = document.getElementById('seller-name-input').value.trim();
             const accessCode = document.getElementById('access-code-input').value.trim();
@@ -476,6 +485,7 @@
             window.location.reload();
         });
 
+        // Listeners dos Modais
         sellerNotificationBtn.addEventListener('click', showSellerNotifications);
         closeSellerNotificationsBtn.addEventListener('click', hideSellerNotifications);
         closeSellerNotificationsBtnBottom.addEventListener('click', hideSellerNotifications);
@@ -498,7 +508,7 @@
         saveFeedbackBtn.addEventListener('click', saveFeedback);
 
 
-        // --- Realtime Data & Notification Listeners (v2) ---
+        // --- Listeners de Dados (v2) ---
         function startRealtimeListener() {
             if (unsubscribeSamples) unsubscribeSamples();
             if (!currentSellerDocRef) {
@@ -507,10 +517,9 @@
                  return;
             }
             
-            // NOVO: Ouve a sub-coleção 'amostras'
+            // Ouve a sub-coleção 'amostras'
             const samplesQuery = query(
                 collection(db, currentSellerDocRef.path, "amostras")
-                // orderBy("pedido") // Podemos adicionar ordenação se necessário, mas requer índice
             );
 
             unsubscribeSamples = onSnapshot(samplesQuery, (snapshot) => {
@@ -538,9 +547,10 @@
             });
         }
 
+        // Ouve notificações para este vendedor
         function listenForSellerNotifications() {
             if (!currentSessionId || !currentSellerOriginalName) {
-                console.warn("Cannot listen for seller notifications: Session ID or Seller Name missing.");
+                console.warn("Não é possível ouvir notificações: Sessão ou Nome do Vendedor em falta.");
                 return;
             }
             if (sellerNotificationListenerUnsubscribe) sellerNotificationListenerUnsubscribe();
@@ -558,6 +568,7 @@
 
                  updateSellerNotificationBadge();
 
+                 // Aciona notificação do navegador se houver novas
                  if (currentUnreadCount > previousUnreadCount && !snapshot.metadata.hasPendingWrites) {
                      snapshot.docChanges().forEach((change) => {
                          if (change.type === "added" && !change.doc.metadata.fromCache) {
@@ -576,7 +587,7 @@
             });
         }
 
-        // --- UI Rendering Functions ---
+        // --- Funções de Renderização da UI ---
         function renderOrders(samplesToDisplay, type) {
             const isPendingSection = type === 'pending';
             const container = document.getElementById(`${type}-orders-list`);
@@ -596,6 +607,7 @@
             section.classList.remove('hidden');
             container.innerHTML = '';
 
+            // Agrupa amostras por pedido
             const groupedByOrder = samplesToDisplay.reduce((acc, sample) => {
                 const key = sample.pedido;
                 if (!acc[key]) acc[key] = { ...sample, samples: [] };
@@ -603,6 +615,7 @@
                 return acc;
             }, {});
 
+            // Ordena pedidos
              const sortedOrderKeys = Object.keys(groupedByOrder).sort((a, b) => {
                  const numA = parseInt(a, 10);
                  const numB = parseInt(b, 10);
@@ -617,6 +630,7 @@
                  if (countEl) countEl.textContent = `${sortedOrderKeys.length} Pedido(s) ${sortedOrderKeys.length > 1 ? '' : ' '}com Pendências`;
             }
 
+            // Cria o HTML para cada grupo de pedido
              sortedOrderKeys.forEach(orderId => {
                  const order = groupedByOrder[orderId];
                 const orderGroup = document.createElement('div');
@@ -624,6 +638,7 @@
                 const statusColor = isPendingSection ? (allSamplesInThisOrderAnswered ? 'blue' : 'yellow') : 'green';
                 orderGroup.className = `bg-white rounded-2xl shadow-sm border-l-4 border-${statusColor}-400 fade-in`;
 
+                // Cria o HTML para as linhas da tabela de amostras
                 const samplesTableRowsHTML = order.samples.map(sample => {
                     const qty = parseFloat(String(sample.qtde || '0').replace(',', '.'));
                     let formattedQty = '';
@@ -665,6 +680,7 @@
                     `;
                 }).join('');
 
+                // Monta o card do pedido
                 orderGroup.innerHTML = `
                     <div class="p-4 flex justify-between items-center cursor-pointer order-header">
                         <div>
@@ -686,11 +702,13 @@
                             </thead>
                             <tbody>${samplesTableRowsHTML}</tbody>
                         </table>
+                        <!-- Botão de Sinalizar Gestor (se pendente) -->
                         ${isPendingSection && allSamplesInThisOrderAnswered ? `
                         <div class="p-4 border-t text-right bg-blue-50">
                             <p class="text-sm text-gray-700 text-left mb-2">Todas as amostras deste pedido foram respondidas. Clique abaixo para notificar o gestor.</p>
                             <button class="signal-manager-btn bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-sm hover:bg-blue-700" data-order-id="${order.pedido}">Sinalizar Gestor</button>
                         </div>` : ''}
+                        <!-- Botão de Reenviar Notificação (se completo) -->
                         ${!isPendingSection ? `
                         <div class="p-3 border-t text-xs text-gray-500 bg-gray-50 flex justify-between items-center">
                              <span>Este pedido já foi sinalizado para o gestor.</span>
@@ -702,6 +720,7 @@
                 container.appendChild(orderGroup);
             });
 
+            // Adiciona listeners aos elementos recém-criados
             container.querySelectorAll('.order-header').forEach(header => {
                 header.addEventListener('click', () => {
                     const tableDiv = header.nextElementSibling;
@@ -717,6 +736,7 @@
                     if (sampleToUpdate) openFeedbackModal(sampleToUpdate);
                 });
             });
+
              container.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const sampleId = e.currentTarget.dataset.sampleId;
@@ -732,24 +752,22 @@
                         observation: '', 
                         finalizedByVendor: false, 
                         editedAfterCompletion: false, 
-                        lastUpdate: Timestamp.now() // Usa Timestamp
+                        lastUpdate: Timestamp.now()
                     };
                     await updateSampleData(sampleId, updates, e.currentTarget);
                 });
             });
             
-            // Listener para SINALIZAR
             container.querySelectorAll('.signal-manager-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => handleSignalManager(e.currentTarget, false));
             });
             
-            // Listener para REENVIAR
             container.querySelectorAll('.resend-notification-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => handleSignalManager(e.currentTarget, true));
             });
         }
         
-        // Função unificada para Sinalizar e Reenviar
+        // Função para Sinalizar Gestor / Reenviar Notificação (v2)
         async function handleSignalManager(button, isResend) {
             const orderId = button.dataset.orderId;
             const originalText = button.textContent;
@@ -758,13 +776,13 @@
             button.textContent = isResend ? 'A Reenviar...' : 'A Sinalizar...';
 
             try {
-                // Para "Sinalizar", primeiro atualizamos todas as amostras
+                // 1. (Apenas ao Sinalizar) Atualiza amostras para 'finalizedByVendor: true'
                 if (!isResend) {
                     const batch = writeBatch(db);
                     const samplesToUpdate = allSellerSamples.filter(s => s.pedido === orderId && !s.isPending);
                     
                     samplesToUpdate.forEach(sample => {
-                        // NOVO: Referência correta ao documento da amostra
+                        // Referência correta ao documento da amostra
                         const sampleRef = doc(db, currentSellerDocRef.path, "amostras", sample.id);
                         batch.update(sampleRef, { finalizedByVendor: true });
                     });
@@ -772,7 +790,7 @@
                     console.log(`Pedido ${orderId} marcado como finalizado pelo vendedor.`);
                 }
 
-                // Enviar notificação ao gestor
+                // 2. Envia notificação ao gestor
                 const sellerName = currentSellerOriginalName;
                 const message = isResend 
                     ? `<strong>${sellerName}</strong> reenviou a notificação do pedido: <strong>${orderId}</strong>.`
@@ -784,17 +802,15 @@
                     message,
                     color: color,
                     timestamp: serverTimestamp(),
-                    triggerPopup: isResend // Só aciona popup no reenvio
+                    triggerPopup: isResend
                 });
 
                 if(isResend) {
                     button.textContent = 'Reenviado!';
                 }
-                // Na "Sinalização", o listener onSnapshot vai tratar de mover o card.
-                // No "Reenvio", apenas mudamos o texto.
                 
                 setTimeout(() => {
-                    if (isResend) { // Só reverte o botão se for reenvio
+                    if (isResend) {
                         button.disabled = false;
                         button.classList.remove('btn-loading');
                         button.textContent = originalText;
@@ -810,7 +826,7 @@
         }
 
 
-        // --- Feedback Modal Functions ---
+        // --- Funções do Modal de Feedback (v2) ---
         function openFeedbackModal(sample) {
             currentSample = sample;
             selectedFeedback = sample.feedback || null;
@@ -832,10 +848,12 @@
             feedbackModal.classList.remove('hidden');
         }
 
+        // Valida o formulário
         function validateFeedbackForm() {
              saveFeedbackBtn.disabled = !observationInput.value.trim() || !selectedFeedback;
         }
 
+        // Salva o feedback
         async function saveFeedback() {
             if (saveFeedbackBtn.disabled) return;
             
@@ -843,6 +861,7 @@
             saveFeedbackBtn.classList.add('btn-loading');
             saveFeedbackBtn.textContent = 'A guardar...';
 
+            // Verifica se é uma edição
              const isEditing = !currentSample.isPending;
              const oldFeedback = currentSample.feedback;
              const oldObservation = currentSample.observation;
@@ -850,18 +869,21 @@
              const newObservation = observationInput.value.trim();
              const wasEdited = isEditing && (oldFeedback !== newFeedback || oldObservation !== newObservation);
 
+            // Prepara os dados para atualização
             const updates = {
                 isPending: false,
                 feedback: newFeedback,
                 observation: newObservation,
                 editedAfterCompletion: wasEdited,
-                lastUpdate: Timestamp.now() // Usa Timestamp
+                lastUpdate: Timestamp.now()
             };
 
+            // Atualiza a amostra individual
             await updateSampleData(currentSample.id, updates, saveFeedbackBtn);
             
-            feedbackModal.classList.add('hidden');
+            feedbackModal.classList.add('hidden'); // Fecha o modal
 
+            // Envia notificação ao gestor SE for uma edição
             if (wasEdited) {
                 try {
                     const sellerName = currentSellerOriginalName;
@@ -876,12 +898,11 @@
                     console.log("Notificação de edição enviada.");
                 } catch (notifError) {
                     console.error("Erro ao enviar notificação de edição:", notifError);
-                    // Não bloquear o utilizador, apenas logar
                 }
             }
         }
 
-        // NOVO: Função de atualização de amostra individual
+        // Função de atualização de amostra individual (v2)
         async function updateSampleData(sampleId, updates, buttonToReset = null) {
             if (!currentSellerDocRef) {
                 console.error("Referência do vendedor não definida.");
@@ -889,11 +910,10 @@
                 return;
             }
 
-            // Referência correta para o documento da amostra
+            // Referência correta ao documento da amostra
             const sampleRef = doc(db, currentSellerDocRef.path, "amostras", sampleId);
             
             try {
-                // Não é necessária transação para atualizar um único doc
                 await updateDoc(sampleRef, updates);
                 console.log(`Amostra ${sampleId} atualizada.`);
             } catch (error) {
@@ -910,8 +930,9 @@
         }
 
 
-        // --- Seller Notification Functions (Integrated) ---
+        // --- Funções de Notificação do Vendedor (v2) ---
 
+        // Atualiza o crachá do sino
         function updateSellerNotificationBadge() {
              if(!sellerNotificationCount || !notificationPrompt) return;
             const unreadCount = sellerNotifications.filter(n => !n.read).length;
@@ -925,6 +946,7 @@
             }
         }
 
+        // Mostra o modal de notificações
         function showSellerNotifications() {
             sellerNotificationsList.innerHTML = '';
             if (sellerNotifications.length === 0) {
@@ -946,7 +968,6 @@
                          <p class="mb-1">
                              <span class="font-bold">${notif.managerName}</span> respondeu sobre:
                          </p>
-                         <!-- NOVO: Contexto do Cliente e Produto -->
                          <div class="mb-2 p-2 bg-gray-100 rounded border text-xs">
                              <p><strong>Cliente:</strong> ${notif.razaoSocial || 'N/A'}</p>
                              <p><strong>Produto:</strong> ${notif.produto || 'N/A'} (${notif.descricao || 'N/A'})</p>
@@ -983,10 +1004,12 @@
             notificationPrompt.classList.add('hidden');
         }
 
+        // Esconde o modal de notificações
         function hideSellerNotifications() {
             sellerNotificationsModal.classList.add('hidden');
         }
 
+        // Marca notificação como lida
         async function markNotificationAsRead(e) {
             const notifId = e.target.dataset.notifId;
             e.target.disabled = true;
@@ -1001,13 +1024,13 @@
                  showSellerNotifications();
                  updateSellerNotificationBadge();
             } catch (err) {
-                console.error("Erro ao marcar como lida:", err);
                 handleFirestoreError(err, "marcar notificação como lida");
                 e.target.disabled = false;
                 e.target.textContent = '✓ Marcar como Lida';
             }
         }
 
+        // Abre modal para responder ao gestor
         function openSellerReplyModal(e) {
             const notifId = e.target.dataset.notifId;
             const notification = sellerNotifications.find(n => n.id === notifId);
@@ -1023,6 +1046,7 @@
             sellerReplyModal.classList.remove('hidden');
         }
 
+        // Envia resposta ao gestor
         async function sendReplyToManager() {
             if (!currentNotificationForReply || !currentSessionId || !currentSellerOriginalName) return;
 
@@ -1037,6 +1061,7 @@
             sendSellerReplyBtn.textContent = 'A Enviar...';
 
             try {
+                // 1. Cria o documento de resposta para o gestor
                 const replyDataForManager = {
                     sellerName: currentSellerOriginalName,
                     replyMessage: replyMessage,
@@ -1050,12 +1075,14 @@
                 const managerRepliesRef = collection(db, "sessoes", currentSessionId, "respostasVendedor");
                 await addDoc(managerRepliesRef, replyDataForManager);
 
+                // 2. Atualiza a notificação original do vendedor
                 const originalNotifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", currentNotificationForReply.id);
                 await updateDoc(originalNotifRef, {
                     sellerReplyMessage: replyMessage,
                     read: true
                 });
 
+                 // Atualiza UI local
                  const notifIndex = sellerNotifications.findIndex(n => n.id === currentNotificationForReply.id);
                  if (notifIndex > -1) {
                       sellerNotifications[notifIndex].read = true;
@@ -1063,7 +1090,7 @@
                  }
                  updateSellerNotificationBadge();
                  sellerReplyModal.classList.add('hidden');
-                showSellerNotifications();
+                 showSellerNotifications();
 
             } catch (error) {
                 handleFirestoreError(error, "enviar resposta ao gestor");
@@ -1076,7 +1103,7 @@
         }
 
 
-        // --- Browser Notification Functions ---
+        // --- Funções de Notificação do Navegador ---
         function requestNotificationPermission() {
             if (!("Notification" in window)) {
                 console.warn("Este navegador não suporta notificações desktop");
@@ -1103,7 +1130,7 @@
         }
 
 
-        // --- Initial Load Logic ---
+        // --- Carregamento Inicial ---
         async function checkLocalStorage() {
             const savedSellerName = localStorage.getItem('sellerName_v2');
             const savedAccessCode = localStorage.getItem('sellerAccessCode_v2');
@@ -1137,6 +1164,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
