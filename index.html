@@ -243,7 +243,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        // *** CORREÇÃO: Adicionado 'runTransaction' à lista de importação ***
+        // *** CORREÇÃO: Adicionado 'serverTimestamp' e 'Timestamp' ***
         import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, serverTimestamp, query, where, writeBatch, limit, addDoc, Timestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -726,20 +726,22 @@
                     
                     e.currentTarget.disabled = true;
                     // Reset fields and use client-side timestamp
-                    await updateSampleData(sampleId, { isPending: true, feedback: '', observation: '', finalizedByVendor: false, editedAfterCompletion: false, lastUpdate: new Date() });
+                    // *** CORREÇÃO: Usar serverTimestamp() ***
+                    await updateSampleData(sampleId, { 
+                        isPending: true, 
+                        feedback: '', 
+                        observation: '', 
+                        finalizedByVendor: false, 
+                        editedAfterCompletion: false, 
+                        lastUpdate: serverTimestamp() // <-- MUDANÇA AQUI
+                    });
                 });
             });
               container.querySelectorAll('.signal-manager-btn').forEach(btn => {
                   btn.addEventListener('click', async (e) => {
                       const orderId = e.currentTarget.dataset.orderId;
                       e.currentTarget.disabled = true;
-                      e.currentTarget.textContent = 'Sinalizado!';
-                      
-                      // *** CORREÇÃO: Esta função agora deve usar uma transação para marcar como 'finalized' ***
-                      // A abordagem de ler 'allSellerSamples' localmente é insegura.
-                      // Vamos chamar 'updateSampleData' para cada amostra. 
-                      // Não, isso é ineficiente.
-                      // A melhor abordagem é uma transação que atualiza todas de uma vez.
+                      e.currentTarget.textContent = 'A sinalizar...'; // MUDANÇA: 'A sinalizar...'
                       
                       try {
                         await runTransaction(db, async (transaction) => {
@@ -752,7 +754,8 @@
                             // Mapear e atualizar apenas as amostras relevantes
                             const updatedSamplesArray = currentSamples.map(sample => {
                                 if (sample.pedido === orderId && !sample.isPending) {
-                                    return { ...sample, finalizedByVendor: true };
+                                    // *** CORREÇÃO: Adicionar timestamp ao finalizar ***
+                                    return { ...sample, finalizedByVendor: true, lastUpdate: serverTimestamp() }; // <-- MUDANÇA AQUI
                                 }
                                 return sample;
                             });
@@ -761,6 +764,8 @@
                             transaction.update(currentSellerDocRef, { amostras: updatedSamplesArray });
                         });
 
+                        // MUDANÇA: Mover texto de sucesso para dentro do try
+                        e.currentTarget.textContent = 'Sinalizado!';
                         console.log(`Pedido ${orderId} marcado como finalizado pelo vendedor (via transação).`);
 
                         // Enviar notificação ao gestor (fora da transação)
@@ -781,6 +786,8 @@
                           // O listener (onSnapshot) irá reverter a UI para o estado anterior
                           // se a escrita falhar, então não precisamos reverter localmente.
                           // O botão será re-renderizado pelo listener, então não precisamos reativá-lo aqui.
+                          // MUDANÇA: O listener irá re-renderizar o botão, então o estado 'disabled'
+                          // será tratado automaticamente pelo onSnapshot.
                       }
                        // Re-rendering happens via listener
                   });
@@ -807,6 +814,9 @@
                 feedbackOptionsContainer.appendChild(button);
             });
 
+            // *** CORREÇÃO: Re-ativar o botão ao abrir o modal ***
+            saveFeedbackBtn.disabled = false;
+            saveFeedbackBtn.textContent = 'Salvar';
             validateFeedbackForm(); // Check initial form validity
             feedbackModal.classList.remove('hidden'); // Show modal
         }
@@ -814,12 +824,23 @@
         // Enable/disable save button based on selection and observation
         function validateFeedbackForm() {
              // Observation is mandatory, feedback selection is mandatory
-             saveFeedbackBtn.disabled = !observationInput.value.trim() || !selectedFeedback;
+             // *** CORREÇÃO: Não re-ativar se já estiver 'A guardar...' ***
+             if (saveFeedbackBtn.textContent === 'A guardar...') {
+                 saveFeedbackBtn.disabled = true;
+             } else {
+                 saveFeedbackBtn.disabled = !observationInput.value.trim() || !selectedFeedback;
+             }
         }
 
         // Save feedback and observation to Firestore
-        async function saveFeedback() { // Renamed from original save-button listener
+        // *** FUNÇÃO ATUALIZADA (saveFeedback) ***
+        async function saveFeedback() {
             if (saveFeedbackBtn.disabled) return;
+
+            // --- CORREÇÃO: Desativar botão ---
+            saveFeedbackBtn.disabled = true;
+            saveFeedbackBtn.textContent = 'A guardar...';
+            // --- Fim da Correção ---
 
              // Determine if this is an edit of a previously completed feedback
              const isEditing = !currentSample.isPending;
@@ -835,40 +856,55 @@
                 feedback: newFeedback,
                 observation: newObservation,
                 editedAfterCompletion: wasEdited, // Store edit status
-                lastUpdate: new Date() // *** CORRECTION: Use client-side timestamp ***
+                lastUpdate: serverTimestamp() // *** CORREÇÃO: Usar serverTimestamp ***
             };
 
-            feedbackModal.classList.add('hidden'); // Close modal immediately
-            await updateSampleData(currentSample.id, updates); // Update Firestore
+            // --- CORREÇÃO: Mover o fecho do modal para dentro do try/catch ---
+            try {
+                await updateSampleData(currentSample.id, updates); // Update Firestore
+                feedbackModal.classList.add('hidden'); // Fechar modal APENAS em caso de sucesso
 
-            // Send notification to manager *only* if it was an edit
-            if (wasEdited) {
-                try {
-                    const sellerName = currentSellerOriginalName;
-                    const message = `<strong>${sellerName}</strong> <i>editou</i> o feedback para <strong>${currentSample.produto}</strong> (Pedido ${currentSample.pedido}): ${newFeedback}`;
-                    const notifId = sanitizeForFirebaseId(`edit-${currentSample.id}-${Date.now()}`);
-                    const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
+                // Enviar notificação ao gestor *only* if it was an edit
+                if (wasEdited) {
+                    try {
+                        const sellerName = currentSellerOriginalName;
+                        const message = `<strong>${sellerName}</strong> <i>editou</i> o feedback para <strong>${currentSample.produto}</strong> (Pedido ${currentSample.pedido}): ${newFeedback}`;
+                        const notifId = sanitizeForFirebaseId(`edit-${currentSample.id}-${Date.now()}`);
+                        const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
 
-                    await setDoc(notifRef, {
-                        message,
-                        color: 'orange', // Orange color for edits
-                        timestamp: serverTimestamp(), // serverTimestamp is OK here
-                        triggerPopup: true // Trigger browser popup for manager on edits
-                    });
-                    console.log("Notificação de edição enviada.");
-                } catch (notifError) {
-                    console.error("Erro ao enviar notificação de edição:", notifError);
-                    // Log error but don't block user
+                        await setDoc(notifRef, {
+                            message,
+                            color: 'orange', // Orange color for edits
+                            timestamp: serverTimestamp(), 
+                            triggerPopup: true // Trigger browser popup for manager on edits
+                        });
+                        console.log("Notificação de edição enviada.");
+                    } catch (notifError) {
+                        console.error("Erro ao enviar notificação de edição:", notifError);
+                        // Log error but don't block user
+                    }
+                }
+            } catch (error) {
+                // Se updateSampleData falhar, o erro é apanhado aqui
+                console.error("Erro ao guardar feedback:", error);
+                showAlert(`Não foi possível guardar o feedback. Tente novamente.\n\nDetalhe: ${error.message}`);
+            } finally {
+                // --- CORREÇÃO: Re-ativar o botão APENAS se o modal ainda estiver visível (ou seja, se falhou) ---
+                if (!feedbackModal.classList.contains('hidden')) {
+                    saveFeedbackBtn.disabled = false;
+                    saveFeedbackBtn.textContent = 'Salvar';
+                    validateFeedbackForm(); // Re-validar o formulário
                 }
             }
+            // --- Fim da Correção ---
         }
 
         // *** FUNÇÃO DE ATUALIZAÇÃO CORRIGIDA USANDO TRANSAÇÃO ***
         async function updateSampleData(sampleId, updates) {
             if (!currentSellerDocRef) {
                 console.error("Referência do vendedor não definida. Abortando atualização.");
-                showAlert("Erro: Não foi possível encontrar a referência do vendedor. Tente recarregar a página.");
-                return;
+                // *** CORREÇÃO: Lançar erro para o 'saveFeedback' apanhar ***
+                throw new Error("Referência do vendedor não definida. Tente recarregar a página.");
             }
 
             try {
@@ -887,17 +923,21 @@
                     const sampleIndex = currentSamples.findIndex(s => s.id === sampleId);
                     
                     if (sampleIndex === -1) {
-                         // A amostra não foi encontrada. Isso pode acontecer se foi excluída
-                         // em outra aba. Lançar um erro para falhar a transação.
+                         // A amostra não foi encontrada.
                          throw new Error(`Amostra ${sampleId} não encontrada no banco de dados. Os seus dados podem estar dessincronizados.`);
                     }
 
-                    // 4. Preparar as atualizações com o timestamp do Firestore
+                    // 4. Preparar as atualizações com o timestamp
+                    // *** CORREÇÃO: Simplificar lógica de timestamp ***
+                    // A 'updates.lastUpdate' será um objeto serverTimestamp() ou um Date (do delete antigo)
                     const updatesWithTimestamp = {
                         ...updates,
-                        // Converter Date do cliente para Timestamp do Firestore
-                        lastUpdate: updates.lastUpdate instanceof Date ? Timestamp.fromDate(updates.lastUpdate) : updates.lastUpdate
+                        // Converter Date do cliente para Timestamp do Firestore, se aplicável
+                        lastUpdate: updates.lastUpdate instanceof Date 
+                            ? Timestamp.fromDate(updates.lastUpdate) 
+                            : updates.lastUpdate // Passar serverTimestamp() ou outros valores diretamente
                     };
+                    // --- Fim da Correção ---
 
                     // 5. Criar a NOVA matriz de amostras
                     const updatedSamplesArray = [...currentSamples];
@@ -912,12 +952,13 @@
 
             } catch (error) {
                 console.error("Falha na transação ao atualizar a amostra:", error);
-                // Mostrar alerta ao usuário
-                showAlert(`Não foi possível guardar a alteração devido a um conflito de dados ou erro. Tente novamente.\n\nDetalhe do erro: ${error.message || error}`);
                 
                 // Re-ativar o botão de exclusão se a atualização falhada foi uma exclusão
                  const deleteButton = document.querySelector(`.delete-btn[data-sample-id='${sampleId}']`);
                  if(deleteButton) deleteButton.disabled = false;
+
+                // *** CORREÇÃO: Re-lançar o erro para o 'saveFeedback' apanhar ***
+                throw error;
             }
         }
 
@@ -979,7 +1020,7 @@
                          ${notif.originalObservation ? `<blockquote>Observação Original: "${notif.originalObservation}"</blockquote>` : ''}
 
                          <div class="flex justify-between items-center mt-2">
-                              <p class="text-xs text-gray-400">${notif.timestamp?.toDate() ? notif.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p>
+                              <p class="text-xs text-gray-400">${notif.timestamp?.toDate() ? notif.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p> {/* Added null check */}
                               <div class="flex gap-2">
                                    ${replyButtonHtml}
                                    ${readButtonHtml}
@@ -1170,6 +1211,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
