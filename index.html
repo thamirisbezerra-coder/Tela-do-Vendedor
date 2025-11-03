@@ -3,215 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de P&D (v2)</title>
+    <title>Tela do Vendedor (v2)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .manager-reply, .seller-reply, .pd-note {
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease; }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -8px;
+            padding: 2px 5px;
+            border-radius: 50%;
+            background: red;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            min-width: 18px;
+            text-align: center;
+        }
+        .seller-notification-item { border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem; margin-bottom: 0.75rem; }
+        .seller-notification-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .seller-notification-item blockquote {
+            border-left: 3px solid #d1d5db;
+            padding-left: 0.75rem;
+            margin-top: 0.25rem;
+            margin-bottom: 0.5rem;
+            font-style: italic;
+            color: #4b5563;
+        }
+        .manager-reply, .seller-reply {
             margin-top: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.375rem; /* rounded-md */
+            padding: 0.5rem;
+            border-radius: 0.25rem;
         }
         .manager-reply {
-            background-color: #f3f4f6; /* bg-gray-100 */
-            border-left: 3px solid #9ca3af; /* border-gray-400 */
+            background-color: #f3f4f6;
+            border-left: 3px solid #9ca3af;
         }
-        .seller-reply {
-            background-color: #f0f9ff; /* bg-blue-50 */
-            border-left: 3px solid #60a5fa; /* border-blue-400 */
-            margin-left: 1rem; /* Indent seller reply */
+         .seller-reply {
+            background-color: #f0f9ff;
+            border-left: 3px solid #60a5fa;
+            margin-left: 1rem;
         }
-        .pd-note {
-             background-color: #fffbeb; /* bg-amber-50 */
-             border-left: 3px solid #fcd34d; /* border-amber-300 */
+        .status-dot {
+            display: inline-block;
+            width: 0.6rem;
+            height: 0.6rem;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            vertical-align: middle;
         }
-        .feedback-sample-item {
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 0.75rem;
-            margin-bottom: 0.75rem;
+        .dot-yellow { background-color: #facc15; }
+        .dot-green { background-color: #4ade80; }
+
+        /* Estilo para botão de carregamento */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
         }
-        .feedback-sample-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .feedback-sample-item.highlight {
-            background-color: #fffbeb; /* bg-amber-50 */
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            margin-top: -10px;
+            margin-left: -10px;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
         }
-        .post-it-card {
-            background-color: #fffbeb; /* bg-amber-50 */
-            border: 1px solid #fde68a; /* border-amber-200 */
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
+
     </style>
 </head>
-<body class="text-gray-800">
+<body class="bg-gray-100">
 
-    <!-- Tela de Login -->
-    <div id="login-view" class="grid place-items-center min-h-screen p-4">
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 w-full max-w-lg p-8">
-            <h1 class="text-3xl font-bold text-gray-800 text-center mb-6">Painel P&D (v2)</h1>
-            <p class="text-gray-600 text-center mb-8">Selecione o seu nome para aceder ao painel.</p>
-            
-            <div id="pd-login-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Botões de login P&D serão inseridos aqui pelo JS -->
-            </div>
-            
-            <div class="mt-8">
-                <input type="password" id="pd-password-input" class="w-full border-gray-300 rounded-lg shadow-sm" placeholder="Digite a sua senha...">
-                <button id="pd-login-btn" class="mt-4 w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700">Entrar</button>
-                <p id="login-error" class="text-red-500 text-sm mt-3 h-4 text-center"></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tela Principal (Dashboard) -->
-    <div id="dashboard" class="hidden container mx-auto p-4 md:p-8">
-        
-        <header class="flex justify-between items-center mb-8">
-            <h1 id="dashboard-title" class="text-3xl font-bold text-gray-900">Painel P&D</h1>
-            <div class="flex items-center gap-4">
-                <div class="relative">
-                    <button id="notification-btn" class="text-gray-500 hover:text-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                        <span id="notification-count-badge" class="hidden absolute top-0 right-0 -mt-1 -mr-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">0</span>
-                    </button>
-                </div>
-                <button id="logout-btn" class="bg-red-500 text-white font-semibold py-2 px-5 rounded-lg text-sm hover:bg-red-600">Sair</button>
-            </div>
-        </header>
-
-        <!-- Estado de Carregamento (NOVO) -->
-        <div id="loading-state" class="hidden text-center p-12">
-            <h2 class="text-2xl font-semibold text-gray-700">A carregar dados...</h2>
-            <p id="loading-message" class="text-gray-500 mt-2">A processar amostras. Isto pode demorar um momento...</p>
-        </div>
-
-        <!-- Conteúdo do Dashboard (NOVO) -->
-        <div id="dashboard-content" class="hidden">
-        
-            <!-- Gráficos -->
-            <section class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border">
-                    <h3 class="font-bold text-lg mb-2 text-center">Status Geral das Amostras</h3>
-                    <div style="height: 250px;"><canvas id="segment-status-chart"></canvas></div>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border">
-                    <h3 class="font-bold text-lg mb-2 text-center">Distribuição de Feedbacks</h3>
-                    <div style="height: 250px;"><canvas id="rejection-rate-chart"></canvas></div>
-                </div>
-            </section>
-
-            <!-- Feeds Lado a Lado -->
-            <section class="grid grid-cols-1 md:grid-cols-2 md:items-start gap-6 mb-10">
-                <!-- Coluna Post-its -->
-                <section>
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Post-its (Notas Internas P&D)</h2>
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border mb-4">
-                        <textarea id="post-it-input" class="w-full border-gray-300 rounded-lg shadow-sm text-sm" rows="3" placeholder="Escreva uma nota interna rápida... (Ex: Ligar para Felipe sobre amostra X)"></textarea>
-                        <button id="add-post-it-btn" class="mt-2 w-full bg-amber-500 text-white font-bold py-2 rounded-lg hover:bg-amber-600">Adicionar Post-it</button>
-                    </div>
-                    <div id="post-it-list" class="space-y-3 h-[28rem] overflow-y-auto bg-gray-50 p-4 rounded-2xl shadow-inner no-scrollbar">
-                        <p class="text-gray-500 placeholder-postit">Nenhum post-it adicionado.</p>
-                    </div>
-                </section>
-                
-                <!-- Coluna Feed Observações -->
-                <section>
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Feed de Observações (Vendedores)</h2>
-                    <div class="mb-4">
-                        <input id="observation-search-input" type="text" placeholder="Pesquisar por vendedor, cliente, produto..." class="border-gray-300 rounded-lg shadow-sm text-sm w-full">
-                    </div>
-                    <div id="observations-feed-list" class="space-y-4 h-[35rem] overflow-y-auto bg-white p-4 rounded-2xl shadow-sm border no-scrollbar">
-                        <p class="text-gray-500 placeholder-observation">Nenhuma observação encontrada.</p>
-                    </div>
-                </section>
-            </section>
-        </div>
-    </div>
-
-    <!-- Modais -->
-    
-    <!-- Modal de Amostras por Feedback -->
-    <div id="feedback-samples-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-30">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl p-6">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 id="feedback-samples-title" class="text-xl font-bold">Amostras com Feedback:</h3>
-                <button id="close-feedback-samples-btn" class="text-2xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
-            </div>
-            <div id="feedback-samples-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                <p class="text-gray-500">A carregar detalhes...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Resposta à Observação -->
-    <div id="reply-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-40">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl p-6">
-            <h3 class="text-xl font-bold mb-4">Responder à Observação</h3>
-            <div class="mb-4 p-3 bg-gray-100 rounded border text-sm">
-                <p class="font-semibold" id="reply-modal-product"></p>
-                <p class="text-xs text-gray-600 mb-1" id="reply-modal-seller"></p>
-                <p class="italic" id="reply-modal-observation">"${' '}"</p>
+    <!-- Access View -->
+    <div id="access-view" class="grid place-items-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 w-full max-w-md p-8 text-center">
+            <div class="mb-8">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-20 w-20 text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <h1 class="text-2xl font-bold text-gray-800">Olá, vendedor(a) Doremus! (v2)</h1>
+                <p class="text-gray-600 mt-2">Este é o seu painel de feedbacks de amostras.</p>
             </div>
             <div class="space-y-4">
                 <div>
-                  <label for="reply-message-input" class="block text-sm font-medium text-gray-700">Sua Resposta (P&D)</label>
-                  <textarea id="reply-message-input" rows="3" class="mt-1 w-full border-gray-300 rounded-lg shadow-sm" placeholder="Digite sua resposta aqui..."></textarea>
+                    <label for="seller-name-input" class="block text-sm font-medium text-gray-700 mb-1 text-left">O seu Nome de Vendedor</label>
+                    <!-- CORREÇÃO: Removido o exemplo do placeholder -->
+                    <input type="text" id="seller-name-input" placeholder="Escreva seu nome" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3">
                 </div>
-            </div>
-            <div class="mt-6 flex justify-end space-x-3">
-                <button id="cancel-reply-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-5 rounded-lg">Cancelar</button>
-                <button id="send-reply-btn" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg">Enviar Resposta</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal de Adicionar Post-it (Contextual) -->
-    <div id="context-post-it-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-40">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl p-6">
-            <h3 class="text-xl font-bold mb-4">Adicionar Nota P&D</h3>
-            <div class="mb-4 p-3 bg-gray-100 rounded border text-sm">
-                <p class="font-semibold" id="post-it-modal-context"></p>
-                <p class="text-xs text-gray-600 mb-1" id="post-it-modal-details"></p>
-            </div>
-            <div class="space-y-4">
                 <div>
-                  <label for="post-it-modal-message" class="block text-sm font-medium text-gray-700">Nota Interna</label>
-                  <textarea id="post-it-modal-message" rows="3" class="mt-1 w-full border-gray-300 rounded-lg shadow-sm" placeholder="Digite sua nota interna..."></textarea>
+                    <label for="access-code-input" class="block text-sm font-medium text-gray-700 mb-1 text-left">Código de Acesso</label>
+                    <input type="text" id="access-code-input" placeholder="Insira o código de 6 dígitos" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3">
                 </div>
             </div>
-            <div class="mt-6 flex justify-end space-x-3">
-                <button id="cancel-post-it-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-5 rounded-lg">Cancelar</button>
-                <button id="send-post-it-btn" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg">Guardar Nota</button>
+            <button id="load-data-btn" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-all">Aceder Amostras</button>
+            <p id="access-error" class="text-red-500 text-sm mt-3 h-4 text-center"></p>
+            <p class="text-xs text-gray-400 mt-8">Doremus, 2025 (v2)</p>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="hidden flex flex-col items-center justify-center min-h-screen text-center p-4">
+        <h1 id="loading-message" class="text-2xl font-bold text-gray-700">A carregar...</h1>
+        <p id="loading-submessage" class="text-gray-600 mt-2">A procurar a sessão ativa e os seus dados...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="hidden flex items-center justify-center min-h-screen p-4">
+        <div class="w-full max-w-5xl">
+             <header class="mb-8 text-center relative flex justify-between items-start">
+                 <div>
+                     <h1 id="welcome-title" class="text-3xl font-bold text-gray-800 text-left">Olá!</h1>
+                     <p class="text-gray-600 mt-2 text-left">Este é o seu painel para gestão de feedbacks de amostras.</p>
+                 </div>
+                 <div class="flex items-center gap-4">
+                     <div class="relative flex flex-col items-center">
+                         <button id="seller-notification-btn" class="relative text-gray-500 hover:text-gray-700" title="Ver respostas do gestor">
+                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                             <span id="seller-notification-count" class="notification-badge hidden">0</span>
+                         </button>
+                         <p id="notification-prompt" class="hidden text-xs text-blue-600 font-semibold animate-pulse">↓ Verificar</p>
+                     </div>
+                     <button id="logout-btn" class="bg-red-500 text-white font-semibold py-1 px-3 rounded-lg text-sm hover:bg-red-600 transition-colors h-fit">Sair</button>
+                 </div>
+            </header>
+
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-200">
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Como Funciona?</h3>
+                    <ol class="list-decimal list-inside text-sm text-gray-600 space-y-1">
+                        <li>Expanda um pedido para ver as amostras (indicadas por <span class="status-dot dot-yellow"></span> Pendente ou <span class="status-dot dot-green"></span> Respondido).</li>
+                        <li>Clique em <strong>"Atualizar"</strong> na amostra desejada (ou "Editar" se já respondeu).</li>
+                        <li>Selecione uma opção de feedback e escreva a observação.</li>
+                        <li>Quando todas as amostras de um pedido forem respondidas (todas <span class="status-dot dot-green"></span>), clique em <strong>"Sinalizar Gestor"</strong> para o notificar.</li>
+                        <li>Verifique as respostas do gestor clicando no <strong class="text-blue-600">sino 🔔</strong>.</li>
+                    </ol>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Dúvidas?</h3>
+                    <p class="text-sm text-gray-600">Se encontrar algum problema ou tiver alguma questão sobre o preenchimento, não hesite em me contatar.</p>
+                    <p class="text-sm text-gray-600 mt-2">Pode me chamar no <strong>chat</strong> ou enviar um <strong>e-mail</strong>.</p>
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <p class="text-sm font-semibold text-gray-800">Thamiris Bezerra</p>
+                        <p class="text-sm text-gray-600">thamiris.bezerra@doremus.com.br</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pending-section" class="hidden">
+                <h2 id="pending-orders-count" class="text-2xl font-bold text-gray-800 mb-4">Pedidos Pendentes</h2>
+                <div id="pending-orders-list" class="space-y-4"></div>
+            </div>
+
+            <div id="completed-section" class="mt-12 hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Pedidos Concluídos e Sinalizados</h2>
+                <div id="completed-orders-list" class="space-y-4"></div>
+            </div>
+
+            <div id="no-data-message" class="hidden text-center bg-white p-8 rounded-2xl shadow-sm border">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                 <h2 class="mt-4 text-2xl font-bold text-gray-800">Nenhuma amostra encontrada.</h2>
+                 <p class="text-gray-600 mt-2">Verifique se os dados de acesso estão corretos ou se a sessão está ativa.</p>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Notificações (Respostas dos Gestores/Vendedores) -->
-    <div id="notification-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-40">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 class="text-xl font-bold">Notificações</h3>
-                <button id="close-notification-btn" class="text-2xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
+    <!-- Feedback Modal -->
+    <div id="feedback-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-20">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col max-h-[90vh]">
+            <h3 class="text-2xl font-bold mb-4 flex-shrink-0" id="modal-title">Atualizar Feedback</h3>
+            <p class="text-gray-600 mb-2 flex-shrink-0">Selecione uma das opções abaixo para a amostra:</p>
+            <p class="font-semibold text-gray-800 mb-6 flex-shrink-0" id="modal-sample-info"></p>
+
+            <div id="feedback-options" class="grid grid-cols-2 gap-3 mb-6 overflow-y-auto">
             </div>
-            <div id="notification-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                <p class="text-gray-500">Nenhuma resposta recebida.</p>
+
+            <div class="flex-shrink-0">
+                <label for="observation" class="block text-sm font-medium text-gray-700 mb-2">Observação (Obrigatório)</label>
+                <textarea id="observation" rows="3" class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Justifique o motivo do feedback..."></textarea>
+            </div>
+
+            <div class="mt-8 flex justify-end space-x-3 flex-shrink-0">
+                <button id="cancel-modal-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-5 rounded-lg">Cancelar</button>
+                <button id="save-button" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg">Salvar</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Alerta Customizado -->
+     <!-- Seller Notifications Modal (Added z-30) -->
+     <div id="seller-notifications-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-30">
+         <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6">
+             <div class="flex justify-between items-center mb-4 border-b pb-2">
+                  <h3 class="text-xl font-bold">Respostas do Gestor</h3>
+                  <button id="close-seller-notifications-btn" class="text-2xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
+             </div>
+             <div id="seller-notifications-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                  <p class="text-gray-500">Nenhuma resposta recebida.</p>
+             </div>
+              <div class="mt-6 flex justify-end">
+                   <button id="close-seller-notifications-btn-bottom" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg">Fechar</button>
+              </div>
+         </div>
+     </div>
+
+     <!-- Seller Reply Modal (NEW - Added z-40) -->
+     <div id="seller-reply-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-40">
+         <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl p-6">
+             <h3 class="text-xl font-bold mb-4">Responder ao Gestor</h3>
+             <div class="mb-4 p-3 bg-gray-100 rounded border text-sm">
+                 <p id="seller-reply-context" class="text-gray-600"></p>
+                 <p id="seller-reply-original-msg" class="font-semibold italic"></p>
+             </div>
+             <div class="space-y-4">
+                  <div>
+                       <label for="seller-reply-message-input" class="block text-sm font-medium text-gray-700">Sua Resposta</label>
+                       <textarea id="seller-reply-message-input" rows="3" class="mt-1 w-full border-gray-300 rounded-lg shadow-sm" placeholder="Digite sua resposta..."></textarea>
+                  </div>
+             </div>
+             <div class="mt-6 flex justify-end space-x-3">
+                 <button id="cancel-seller-reply-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-5 rounded-lg">Cancelar</button>
+                 <button id="send-seller-reply-btn" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg">Enviar Resposta</button>
+             </div>
+         </div>
+     </div>
+
+    <!-- Custom Alert/Modal for errors -->
     <div id="custom-alert" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
             <h3 id="custom-alert-title" class="text-xl font-bold mb-4 text-red-600">Erro na Operação</h3>
-            <p id="custom-alert-message" class="text-gray-700 mb-6">Ocorreu um erro.</p>
+            <p id="custom-alert-message" class="text-gray-700 mb-6">Ocorreu um erro. Tente novamente.</p>
             <div class="flex justify-end">
                 <button id="custom-alert-ok-btn" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg">OK</button>
             </div>
@@ -222,14 +257,15 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { 
-            getFirestore, collection, onSnapshot, doc, getDoc, getDocs, 
-            updateDoc, query, orderBy, serverTimestamp, addDoc, limit, where,
-            deleteDoc, collectionGroup, runTransaction
+            getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, 
+            serverTimestamp, query, where, writeBatch, limit, addDoc, Timestamp, runTransaction, 
+            getDocs
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // Configuração do Firebase
         const firebaseConfig = {
+            // CORREÇÃO: Adicionado o '8' que faltava
             apiKey: "AIzaSyAF_TE28Tbp2nakBGTva1yEEbBCqWvRdJQ",
             authDomain: "feedback-vendedores.firebaseapp.com",
             projectId: "feedback-vendedores",
@@ -243,113 +279,79 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Definições de Acesso P&D
-        const PD_PASSWORDS = {
-            'Panificação (Adriana)': 'pd_adriana5',
-            'Cárneos (Anderson)': 'pd_anderson3',
-            'Aromas/Molhos (Carlos)': 'pd_carlos1',
-            'Nutracêuticos (Daise)': 'pd_daise4',
-            'Lácteos (Flavia)': 'pd_flavia2',
-            'Sorvetes (Margarida)': 'pd_margarida7',
-            'Nutrição Animal (Rebeca)': 'pd_rebeca6',
-            'ADMIN': 'admin123'
-        };
-        const PENDING_STATUSES = ['EM ANÁLISE', 'AMOSTRA SEM FEEDBACK', 'SEM RETORNO DO CLIENTE', 'AMOSTRA NÃO TESTADA', 'PENDENTE'];
-        
+        // Opções de Feedback
+        const FEEDBACK_CHOICES = [
+            'A - COM PEDIDO', 'A - APROVADA SEM PEDIDO', 'P - AMOSTRA NÃO TESTADA', 'P - EM ANÁLISE', 
+            'P - AMOSTRA SEM FEEDBACK', 'R - APRESENTAÇÃO PRÓ ATIVA', 'R - CALIBRE', 'R - EXTRAVIADA', 
+            'R - FORA DA ESPECIFICAÇÃO DO CLIENTE', 'R - FORA DO PERFIL DO CLIENTE', 
+            'R - FRACA / ESTOURANDO / COM CHUVEIRO', 'R - PRODUTO DESCONTINUADO', 'R - QUANTIDADE INSUFICIENTE', 
+            'R - REPRESENTAÇÃO / DISTRIBUIDOR', 'R - SEM RETORNO DO CLIENTE', 'E - INNOVATION / EVENTOS', 
+            'E - EVENTO', 'R - EXPORTACAO'
+        ];
+
         // --- Elementos DOM ---
-        const loginView = document.getElementById('login-view');
-        const pdLoginButtons = document.getElementById('pd-login-buttons');
-        const pdPasswordInput = document.getElementById('pd-password-input');
-        const pdLoginBtn = document.getElementById('pd-login-btn');
-        const loginError = document.getElementById('login-error');
-        const dashboard = document.getElementById('dashboard');
-        const dashboardTitle = document.getElementById('dashboard-title');
-        const logoutBtn = document.getElementById('logout-btn');
+        const accessView = document.getElementById('access-view');
         const loadingState = document.getElementById('loading-state');
         const loadingMessage = document.getElementById('loading-message');
-        const dashboardContent = document.getElementById('dashboard-content');
-        const postItInput = document.getElementById('post-it-input');
-        const addPostItBtn = document.getElementById('add-post-it-btn');
-        const postItList = document.getElementById('post-it-list');
-        const observationsFeedList = document.getElementById('observations-feed-list');
-        const observationSearchInput = document.getElementById('observation-search-input');
-        const feedbackSamplesModal = document.getElementById('feedback-samples-modal');
-        const feedbackSamplesTitle = document.getElementById('feedback-samples-title');
-        const feedbackSamplesList = document.getElementById('feedback-samples-list');
-        const closeFeedbackSamplesBtn = document.getElementById('close-feedback-samples-btn');
-        const replyModal = document.getElementById('reply-modal');
-        const replyModalProduct = document.getElementById('reply-modal-product');
-        const replyModalSeller = document.getElementById('reply-modal-seller');
-        const replyModalObservation = document.getElementById('reply-modal-observation');
-        const replyMessageInput = document.getElementById('reply-message-input');
-        const cancelReplyBtn = document.getElementById('cancel-reply-btn');
-        const sendReplyBtn = document.getElementById('send-reply-btn');
-        const contextPostItModal = document.getElementById('context-post-it-modal');
-        const postItModalContext = document.getElementById('post-it-modal-context');
-        const postItModalDetails = document.getElementById('post-it-modal-details');
-        const postItModalMessage = document.getElementById('post-it-modal-message');
-        const cancelPostItBtn = document.getElementById('cancel-post-it-btn');
-        const sendPostItBtn = document.getElementById('send-post-it-btn');
-        const notificationBtn = document.getElementById('notification-btn');
-        const notificationCountBadge = document.getElementById('notification-count-badge');
-        const notificationModal = document.getElementById('notification-modal');
-        const notificationList = document.getElementById('notification-list');
-        const closeNotificationBtn = document.getElementById('close-notification-btn');
+        const loadingSubmessage = document.getElementById('loading-submessage');
+        const mainContent = document.getElementById('main-content');
+        const loadDataBtn = document.getElementById('load-data-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const accessError = document.getElementById('access-error');
+        const noDataMessage = document.getElementById('no-data-message');
+        const welcomeTitle = document.getElementById('welcome-title');
+        const sellerNotificationBtn = document.getElementById('seller-notification-btn');
+        const sellerNotificationCount = document.getElementById('seller-notification-count');
+        const sellerNotificationsModal = document.getElementById('seller-notifications-modal');
+        const sellerNotificationsList = document.getElementById('seller-notifications-list');
+        const closeSellerNotificationsBtn = document.getElementById('close-seller-notifications-btn');
+        const closeSellerNotificationsBtnBottom = document.getElementById('close-seller-notifications-btn-bottom');
+        const notificationPrompt = document.getElementById('notification-prompt');
+        const sellerReplyModal = document.getElementById('seller-reply-modal');
+        const sellerReplyContext = document.getElementById('seller-reply-context');
+        const sellerReplyOriginalMsg = document.getElementById('seller-reply-original-msg');
+        const sellerReplyMessageInput = document.getElementById('seller-reply-message-input');
+        const cancelSellerReplyBtn = document.getElementById('cancel-seller-reply-btn');
+        const sendSellerReplyBtn = document.getElementById('send-seller-reply-btn');
+        let currentNotificationForReply = null;
+        const feedbackModal = document.getElementById('feedback-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalSampleInfo = document.getElementById('modal-sample-info');
+        const feedbackOptionsContainer = document.getElementById('feedback-options');
+        const observationInput = document.getElementById('observation');
+        const cancelFeedbackModalBtn = document.getElementById('cancel-modal-btn');
+        const saveFeedbackBtn = document.getElementById('save-button');
         const customAlert = document.getElementById('custom-alert');
         const customAlertTitle = document.getElementById('custom-alert-title');
         const customAlertMessage = document.getElementById('custom-alert-message');
         const customAlertOkBtn = document.getElementById('custom-alert-ok-btn');
 
-        // --- Estado Global ---
+        // --- Variáveis de Estado ---
+        let currentSample = null;
+        let selectedFeedback = null;
+        let currentSellerDocRef = null; // Ref para /sessoes/{sid}/vendedores/{vid}
+        let allSellerSamples = [];
+        let unsubscribeSamples = null;
+        let sellerNotificationListenerUnsubscribe = null;
         let currentSessionId = null;
-        let currentPdManagerName = null;
-        let allCurrentSamples = [];
-        let sellerSegmentsCache = {}; // Cache de segmentos
-        let sellerRepliesListenerUnsubscribe = null;
-        let pdPostitsListenerUnsubscribe = null;
-        let destaquesListenerUnsubscribe = null;
-        let dataListenersUnsubscribe = [];
-        let chartInstances = {};
-        let currentSampleForReply = null;
-        let currentSampleForPostIt = null;
-        let allPdPostits = [];
-        let highlightedSamplesCache = [];
-        
-        // Classe para gerir carregamento de dados (evita "piscar")
-        class DataLoadManager {
-            constructor(totalItems, onComplete) {
-                this.totalItems = totalItems;
-                this.loadedItems = 0;
-                this.allData = [];
-                this.onComplete = onComplete;
-                this.hasCompleted = false;
-            }
-
-            itemLoaded(data) {
-                this.loadedItems++;
-                this.allData = this.allData.concat(data);
-                
-                const progress = this.totalItems > 0 ? (this.loadedItems / this.totalItems) * 100 : 100;
-                loadingMessage.textContent = `A processar... (${this.loadedItems}/${this.totalItems} vendedores carregados)`;
-
-                if (this.loadedItems === this.totalItems && !this.hasCompleted) {
-                    this.hasCompleted = true;
-                    this.onComplete(this.allData);
-                }
-            }
-        }
+        let currentSellerId = null; // Nome higienizado do vendedor
+        let currentSellerOriginalName = null;
+        let sellerNotifications = [];
 
         // --- Funções Utilitárias ---
         const normalizeText = (text = '') => text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() : '';
+        const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
 
+        // Alerta customizado
         function showAlert(message, title = "Erro na Operação", color = "text-red-600") {
             customAlertTitle.textContent = title;
-            customAlertMessage.innerHTML = message;
+            customAlertMessage.innerHTML = message; // Usar innerHTML para o <br>
             customAlertTitle.className = `text-xl font-bold mb-4 ${color}`;
             customAlert.classList.remove('hidden');
         }
         customAlertOkBtn.addEventListener('click', () => customAlert.classList.add('hidden'));
 
+        // Tratamento de erros do Firestore
         function handleFirestoreError(error, operationContext) {
             console.error(`Erro em "${operationContext}":`, error);
             let message = `Não foi possível completar a operação: ${operationContext}.<br><br>Erro: ${error.message}`;
@@ -360,14 +362,13 @@
                 message = "O limite diário de uso do banco de dados foi atingido (Quota Exceeded). Novas alterações não serão salvas hoje.<br><br>Por favor, tente novamente amanhã.";
                 title = "Limite da Plataforma Atingido";
                 color = "text-amber-600";
-            } else if (error.code === 'permission-denied') {
-                message = "Permissão negada. Verifique as regras de segurança do Firebase.";
             }
             showAlert(message, title, color);
         }
+
+        // --- Autenticação e Carregamento de Dados (v2) ---
         
-        // --- Lógica de Carregamento de Dados (v2) ---
-        
+        // Busca a sessão ativa
         async function getActiveSessionId() {
             try {
                 const activeSessionRef = doc(db, "configuracoes", "sessaoAtiva");
@@ -378,688 +379,794 @@
                     return null;
                 }
             } catch (error) {
-                handleFirestoreError(error, "buscar sessão ativa");
+                console.error("Erro ao buscar sessão ativa:", error);
                 return null;
             }
         }
 
-        async function loadSellerSegments() {
-            sellerSegmentsCache = {};
-            try {
-                const segmentsSnap = await getDocs(collection(db, "vendedorConfig"));
-                segmentsSnap.forEach(doc => {
-                    sellerSegmentsCache[doc.id] = doc.data().segmento;
-                });
-                console.log("Cache de segmentos carregado.");
-            } catch (error) {
-                handleFirestoreError(error, "carregar segmentos de vendedores");
+        // Tenta fazer login
+        async function attemptLogin(sellerName, accessCode, isAutoLogin = false) {
+            if (!sellerName || !accessCode) {
+                if (!isAutoLogin) accessError.textContent = 'Nome e Código são obrigatórios.';
+                return false;
             }
-        }
-        
-        // Carrega TODOS os dados da sessão (v2)
-        async function loadAllData(sessionId) {
-            dashboard.classList.remove('hidden');
+
             loadingState.classList.remove('hidden');
-            dashboardContent.classList.add('hidden');
-            loginView.classList.add('hidden');
-            
-            dataListenersUnsubscribe.forEach(unsub => unsub());
-            dataListenersUnsubscribe = [];
-            
-            currentSessionId = sessionId;
-            allCurrentSamples = [];
+            loadingSubmessage.textContent = "A procurar sessão ativa...";
+            accessView.classList.add('hidden');
 
-            // 1. Carrega os segmentos
-            await loadSellerSegments();
-
-            // 2. Busca todos os vendedores da sessão (P&D vê todos)
-            const sellersQuery = query(collection(db, "sessoes", sessionId, "vendedores"));
-            const sellersSnapshot = await getDocs(sellersQuery);
-            const sellerDocs = sellersSnapshot.docs;
-            
-            if (sellerDocs.length === 0) {
-                 console.log("Nenhum vendedor encontrado para esta sessão.");
-                 loadingState.classList.add('hidden');
-                 dashboardContent.classList.remove('hidden');
-                 processAndDisplayDashboard([]);
-                 // Inicia outros listeners mesmo sem vendedores
-                 listenForPdPostits(sessionId);
-                 listenForSellerReplies(sessionId);
-                 listenForDestaques(sessionId);
-                 return;
-            }
-
-            // 3. Usa o DataLoadManager para carregar as sub-coleções
-            const loadManager = new DataLoadManager(sellerDocs.length, (allSamples) => {
-                allCurrentSamples = allSamples;
-                processAndDisplayDashboard(allCurrentSamples);
+            // 1. Encontra a sessão ativa (ex: sessao_v2_...)
+            currentSessionId = await getActiveSessionId();
+            if (!currentSessionId) {
                 loadingState.classList.add('hidden');
-                dashboardContent.classList.remove('hidden');
-            });
-            
-            loadingMessage.textContent = `A preparar para carregar ${sellerDocs.length} vendedores...`;
-
-            // 4. Ouve as 'amostras' de cada vendedor
-            sellerDocs.forEach(sellerDoc => {
-                const sellerData = sellerDoc.data();
-                const samplesQuery = query(
-                    collection(db, sellerDoc.ref.path, "amostras")
-                );
-
-                const unsub = onSnapshot(samplesQuery, (samplesSnapshot) => {
-                    const samples = samplesSnapshot.docs.map(sampleDoc => ({
-                        ...sampleDoc.data(),
-                        id: sampleDoc.id,
-                        sellerName: sellerData.originalName
-                    }));
-                    loadManager.itemLoaded(samples);
-                }, (error) => {
-                    handleFirestoreError(error, `ouvir amostras de ${sellerData.originalName}`);
-                    loadManager.itemLoaded([]);
-                });
-                dataListenersUnsubscribe.push(unsub);
-            });
-            
-            // 5. Ouve os outros listeners
-            listenForPdPostits(sessionId);
-            listenForSellerReplies(sessionId);
-            listenForDestaques(sessionId);
-        }
-
-
-        // --- Lógica de Login P&D ---
-        function populatePdButtons() {
-            pdLoginButtons.innerHTML = '';
-            Object.keys(PD_PASSWORDS).forEach(name => {
-                const button = document.createElement('button');
-                button.className = "p-4 bg-gray-100 rounded-lg font-semibold text-gray-700 hover:bg-blue-100 border border-transparent hover:border-blue-300 transition";
-                button.textContent = name;
-                button.dataset.name = name;
-                button.addEventListener('click', () => {
-                    pdLoginButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white'));
-                    button.classList.add('bg-blue-600', 'text-white');
-                    currentPdManagerName = name;
-                });
-                pdLoginButtons.appendChild(button);
-            });
-        }
-
-        async function login() {
-            const password = pdPasswordInput.value;
-            if (!currentPdManagerName) {
-                loginError.textContent = 'Por favor, selecione o seu nome.';
-                return;
+                accessView.classList.remove('hidden');
+                accessError.textContent = 'Nenhuma sessão de feedback ativa encontrada. Contate o gestor.';
+                return false;
             }
             
-            if (PD_PASSWORDS[currentPdManagerName] === password) {
-                loginError.textContent = '';
-                pdLoginBtn.disabled = true;
-                pdLoginBtn.textContent = 'A carregar...';
+            loadingSubmessage.textContent = `Sessão encontrada. A verificar credenciais...`;
 
-                localStorage.setItem('pdManagerName', currentPdManagerName);
-                
-                const sessionId = await getActiveSessionId();
-                if (!sessionId) {
-                    loginError.textContent = 'Nenhuma sessão ativa encontrada. Contate o administrador.';
-                    pdLoginBtn.disabled = false;
-                    pdLoginBtn.textContent = 'Entrar';
-                    return;
-                }
-                
-                dashboardTitle.textContent = `Painel P&D: ${currentPdManagerName}`;
-                await loadAllData(sessionId);
+            // 2. Prepara os IDs do vendedor
+            currentSellerId = sanitizeForFirebaseId(sellerName);
+            currentSellerOriginalName = sellerName;
 
-            } else {
-                loginError.textContent = 'Senha incorreta.';
-            }
-        }
-        
-        function logout() {
-            localStorage.removeItem('pdManagerName');
-            currentSessionId = null;
-            currentPdManagerName = null;
-            allCurrentSamples = [];
-            allPdPostits = [];
-            dataListenersUnsubscribe.forEach(unsub => unsub());
-            dataListenersUnsubscribe = [];
-            if(sellerRepliesListenerUnsubscribe) sellerRepliesListenerUnsubscribe();
-            if(pdPostitsListenerUnsubscribe) pdPostitsListenerUnsubscribe();
-            if(destaquesListenerUnsubscribe) destaquesListenerUnsubscribe();
-            
-            dashboard.classList.add('hidden');
-            loginView.classList.remove('hidden');
-            pdPasswordInput.value = '';
-            pdLoginBtn.disabled = false;
-            pdLoginBtn.textContent = 'Entrar';
-            pdLoginButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white'));
-        }
+            try {
+                // 3. Tenta aceder ao documento do vendedor
+                const docRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
+                const docSnap = await getDoc(docRef);
 
-        // --- Processamento e Renderização do Dashboard ---
-        function processAndDisplayDashboard(samples) {
-            renderCharts(samples);
-            renderObservationsFeed(samples);
-            // Post-its e Notificações são renderizados pelos seus próprios listeners
-        }
+                if (docSnap.exists() && docSnap.data().accessCode === accessCode) {
+                    // Sucesso!
+                    currentSellerDocRef = docRef;
+                    const sellerData = docSnap.data();
+                    welcomeTitle.textContent = `Olá, ${sellerData.originalName}!`;
+                    currentSellerOriginalName = sellerData.originalName;
 
-        function renderCharts(samples) {
-            let pending = 0, resolved = 0, approved = 0, rejected = 0, events = 0;
-            const APPROVED_PREFIX = 'A -';
-            const REJECTED_PREFIX = 'R -';
-            const EVENTS_PREFIX = 'E -';
-
-            samples.forEach(s => {
-                if (s.isPending) {
-                    pending++;
-                } else {
-                    resolved++;
-                    const feedback = s.feedback || '';
-                    if (feedback) {
-                        if (feedback.startsWith(APPROVED_PREFIX)) approved++;
-                        else if (feedback.startsWith(REJECTED_PREFIX)) rejected++;
-                        else if (feedback.startsWith(EVENTS_PREFIX)) events++;
+                    if (!isAutoLogin) {
+                        localStorage.setItem('sellerName_v2', currentSellerOriginalName);
+                        localStorage.setItem('sellerAccessCode_v2', accessCode);
                     }
-                }
-            });
 
-            renderChart('segment-status-chart', 'doughnut', {
-                labels: ['Pendentes', 'Resolvidos'],
-                datasets: [{ data: [pending, resolved], backgroundColor: ['#facc15', '#3b82f6'] }]
-            });
+                    accessError.textContent = '';
+                    loadingMessage.textContent = 'A carregar as suas amostras...';
+                    loadingSubmessage.textContent = '';
 
-            if (approved === 0 && rejected === 0 && events === 0) {
-                 renderChart('rejection-rate-chart', 'doughnut', { labels: ['Aguardando Respostas'], datasets: [{ data: [1], backgroundColor: ['#e5e7eb'] }] });
-            } else {
-                renderChart('rejection-rate-chart', 'doughnut', {
-                    labels: ['Aprovadas', 'Reprovadas', 'Eventos'],
-                    datasets: [{
-                        data: [approved, rejected, events],
-                        backgroundColor: ['#34d399', '#f87171', '#a78bfa']
-                    }]
-                });
-            }
-        }
-
-        function renderChart(canvasId, type, data, options = {}) {
-            const ctx = document.getElementById(canvasId)?.getContext('2d');
-            if (!ctx) return;
-            if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
-            
-            Chart.register(ChartDataLabels);
-            chartInstances[canvasId] = new Chart(ctx, { 
-                type, 
-                data, 
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: type === 'doughnut' },
-                        datalabels: { display: false },
-                        ...options.plugins
-                    },
-                    ...options
-                }
-            });
-        }
-        
-        function renderObservationsFeed(samples) {
-            const searchTerm = normalizeText(observationSearchInput.value);
-            
-            const filteredSamples = samples.filter(s => 
-                s.observation && (
-                    !searchTerm ||
-                    normalizeText(s.sellerName).includes(searchTerm) ||
-                    normalizeText(s.produto).includes(searchTerm) ||
-                    normalizeText(s.descricao).includes(searchTerm) ||
-                    normalizeText(s.razaoSocial).includes(searchTerm) ||
-                    normalizeText(s.observation).includes(searchTerm)
-                )
-            ).sort((a, b) => (b.lastUpdate?.toDate ? b.lastUpdate.toDate().getTime() : 0) - (a.lastUpdate?.toDate ? a.lastUpdate.toDate().getTime() : 0));
-            
-            observationsFeedList.innerHTML = '';
-            if (filteredSamples.length === 0) {
-                 observationsFeedList.innerHTML = '<p class="text-gray-500 placeholder-observation">Nenhuma observação encontrada.</p>';
-                 return;
-            }
-            
-            filteredSamples.forEach(sample => {
-                 const card = document.createElement('div');
-                 card.className = "p-4 rounded-lg border bg-white";
-                 const time = sample.lastUpdate?.toDate() ? sample.lastUpdate.toDate().toLocaleString('pt-BR') : 'data inválida';
-                 const isHighlighted = highlightedSamplesCache.includes(sample.id);
-                 
-                 const starIcon = isHighlighted ?
-                    `<svg class="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588 1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>` :
-                    `<svg class="w-5 h-5 text-gray-400 hover:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.524 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.524 4.674c.3.921-.755 1.688-1.54 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.784.57-1.838-.197-1.539-1.118l1.524-4.674a1 1 0 00-.363-1.118L2.98 10.1c-.783-.57-.38-1.81.588 1.81h4.914a1 1 0 00.951-.69l1.524-4.674z"></path></svg>`;
-                 
-                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <p class="font-bold text-gray-800">${sample.produto}</p>
-                            <p class="text-xs text-gray-500">${sample.razaoSocial || 'Cliente N/A'} (Pedido: ${sample.pedido})</p>
-                        </div>
-                        <button class="highlight-sample-btn p-1 rounded-full hover:bg-gray-200" data-sample-id="${sample.id}" title="Destacar Amostra">
-                            ${starIcon}
-                        </button>
-                    </div>
-                    <p class="text-gray-700 mb-3">"${sample.observation}"</p>
-                    <div class="flex justify-between items-end text-xs text-gray-500 mt-3">
-                         <div>
-                             <p>- ${sample.sellerName}</p>
-                             <p class="text-gray-400">${time}</p>
-                         </div>
-                         <div class="flex gap-2">
-                             <button class="add-context-post-it-btn bg-amber-100 text-amber-700 hover:bg-amber-200 px-2 py-1 rounded text-xs font-semibold" data-sample-id="${sample.id}">
-                                Adicionar Nota
-                             </button>
-                             <button class="reply-observation-btn bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-xs font-semibold" data-sample-id="${sample.id}">
-                                Responder
-                             </button>
-                         </div>
-                    </div>
-                 `;
-                 observationsFeedList.appendChild(card);
-            });
-            
-            // Adiciona listeners
-            observationsFeedList.querySelectorAll('.reply-observation-btn').forEach(btn => {
-                 btn.addEventListener('click', openReplyModal);
-            });
-            observationsFeedList.querySelectorAll('.add-context-post-it-btn').forEach(btn => {
-                 btn.addEventListener('click', openPostItModal);
-            });
-            observationsFeedList.querySelectorAll('.highlight-sample-btn').forEach(btn => {
-                 btn.addEventListener('click', toggleDestaqueAmostra);
-            });
-        }
-
-        // --- Lógica de Resposta e Notificação ---
-        
-        function openReplyModal(e) {
-             const sampleId = e.currentTarget.dataset.sampleId;
-             currentSampleForReply = allCurrentSamples.find(s => s.id === sampleId);
-             if (!currentSampleForReply) {
-                 showAlert("Erro: Amostra não encontrada.");
-                 return;
-             }
-             
-             replyModalProduct.textContent = `${currentSampleForReply.produto} (${currentSampleForReply.pedido})`;
-             replyModalSeller.textContent = `Observação de: ${currentSampleForReply.sellerName}`;
-             replyModalObservation.textContent = `"${currentSampleForReply.observation}"`;
-             replyMessageInput.value = '';
-             replyModal.classList.remove('hidden');
-        }
-
-        async function sendReplyToSeller() {
-            if (!currentSampleForReply || !currentSessionId) return;
-            
-            const replyMessage = replyMessageInput.value.trim();
-            if (!replyMessage || !currentPdManagerName) {
-                showAlert("A mensagem de resposta não pode estar vazia.");
-                return;
-            }
-
-            sendReplyBtn.disabled = true;
-            sendReplyBtn.textContent = 'A Enviar...';
-
-            try {
-                // ATUALIZAÇÃO v2: Envia todos os dados para o modal do vendedor
-                const notificationData = {
-                    managerName: currentPdManagerName, // Nome do P&D
-                    replyMessage: replyMessage,
-                    originalObservation: currentSampleForReply.observation,
-                    sellerName: currentSampleForReply.sellerName,
-                    pedido: currentSampleForReply.pedido,
-                    produto: currentSampleForReply.produto,
-                    razaoSocial: currentSampleForReply.razaoSocial || '', // NOVO
-                    descricao: currentSampleForReply.descricao || '', // NOVO
-                    timestamp: serverTimestamp(),
-                    read: false,
-                };
-
-                const sellerNotifsRef = collection(db, "sessoes", currentSessionId, "notificacoesVendedor");
-                await addDoc(sellerNotifsRef, notificationData);
-
-                replyModal.classList.add('hidden');
-                showAlert("Resposta enviada com sucesso.", "Sucesso", "text-green-600");
-                
-            } catch (error) {
-                handleFirestoreError(error, "enviar resposta ao vendedor");
-            } finally {
-                sendReplyBtn.disabled = false;
-                sendReplyBtn.textContent = 'Enviar Resposta';
-                currentSampleForReply = null;
-            }
-        }
-        
-        // Ouve respostas dos vendedores (para o sino)
-        function listenForSellerReplies(sessionId) {
-            if (sellerRepliesListenerUnsubscribe) sellerRepliesListenerUnsubscribe();
-            
-            // P&D ouve TODAS as respostas (incluindo as para P&D)
-            const q = query(
-                 collection(db, "sessoes", sessionId, "respostasVendedor"),
-                 where("readByManager", "==", false) // v1: readByManager | v2: readByPd?
-                 // Vamos assumir que P&D vê tudo que não foi lido pelo Gestor
-            );
-
-            sellerRepliesListenerUnsubscribe = onSnapshot(q, (snapshot) => {
-                const replies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderNotificationBell(replies);
-            }, (error) => {
-                handleFirestoreError(error, "ouvir respostas dos vendedores");
-            });
-        }
-        
-        function renderNotificationBell(replies) {
-             const unreadCount = replies.length;
-             if (unreadCount > 0) {
-                 notificationCountBadge.textContent = unreadCount;
-                 notificationCountBadge.classList.remove('hidden');
-             } else {
-                 notificationCountBadge.classList.add('hidden');
-             }
-             // Recarrega o modal se estiver aberto
-             if (!notificationModal.classList.contains('hidden')) {
-                 openNotificationModal(replies);
-             }
-        }
-        
-        function openNotificationModal(replies) {
-             notificationList.innerHTML = '';
-             // Se 'replies' não for passado, busca do listener
-             if (!replies) {
-                 // Esta lógica precisa ser repensada, pois o listener é que deve
-                 // ter os dados. Vamos assumir que o listener já populou
-                 // uma variável global se for necessário, mas é melhor passar 'replies'.
-                 notificationList.innerHTML = '<p class="text-gray-500">A carregar respostas...</p>';
-                 return;
-             }
-             
-             if (replies.length === 0) {
-                 notificationList.innerHTML = '<p class="text-gray-500">Nenhuma resposta nova dos vendedores.</p>';
-             } else {
-                 replies.sort((a,b) => (b.timestamp?.toDate() ?? 0) - (a.timestamp?.toDate() ?? 0));
-                 
-                 replies.forEach(reply => {
-                     const item = document.createElement('div');
-                     const isPdReply = reply.originalManagerName === currentPdManagerName; // Resposta a este P&D
-                     item.className = `p-3 border-b border-gray-100 ${isPdReply ? 'bg-blue-50' : ''}`;
-                     item.innerHTML = `
-                        <p class="font-semibold">${reply.sellerName} respondeu (para ${reply.originalManagerName || 'Gestor'}):</p>
-                        <p class="italic text-gray-700 my-1">"${reply.replyMessage}"</p>
-                        <p class="text-xs text-gray-500">Ref: ${reply.produto} (Pedido: ${reply.pedido})</p>
-                        <div class="text-right mt-2">
-                            <button class="mark-as-read-btn bg-gray-200 text-gray-700 text-xs font-semibold py-1 px-3 rounded hover:bg-gray-300" data-reply-id="${reply.id}">Marcar como Lida</e_button>
-                        </div>
-                     `;
-                     notificationList.appendChild(item);
-                 });
-             }
-             notificationModal.classList.remove('hidden');
-        }
-        
-        async function markReplyAsRead(e) {
-             const button = e.target;
-             const replyId = button.dataset.replyId;
-             button.disabled = true;
-             button.textContent = 'A marcar...';
-             
-             try {
-                 const replyRef = doc(db, "sessoes", currentSessionId, "respostasVendedor", replyId);
-                 await updateDoc(replyRef, { readByManager: true });
-                 // O listener vai atualizar
-                 notificationModal.classList.add('hidden');
-             } catch (error) {
-                 handleFirestoreError(error, "marcar resposta como lida");
-                 button.disabled = false;
-                 button.textContent = 'Marcar como Lida';
-             }
-        }
-        
-        // --- Lógica de Post-its (P&D) ---
-        
-        function listenForPdPostits(sessionId) {
-            if (pdPostitsListenerUnsubscribe) pdPostitsListenerUnsubscribe();
-            
-            const q = query(
-                collection(db, "sessoes", sessionId, "pdPostits"),
-                orderBy("timestamp", "desc")
-            );
-            
-            pdPostitsListenerUnsubscribe = onSnapshot(q, (snapshot) => {
-                 allPdPostits = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                 renderPostIts();
-            }, (error) => {
-                 handleFirestoreError(error, "ouvir post-its de P&D");
-            });
-        }
-        
-        function renderPostIts() {
-             postItList.innerHTML = '';
-             if (allPdPostits.length === 0) {
-                 postItList.innerHTML = '<p class="text-gray-500 placeholder-postit">Nenhum post-it adicionado.</p>';
-                 return;
-             }
-             
-             allPdPostits.forEach(note => {
-                 const card = document.createElement('div');
-                 card.className = "post-it-card flex flex-col justify-between";
-                 const time = note.timestamp?.toDate() ? note.timestamp.toDate().toLocaleString('pt-BR') : '';
-                 
-                 card.innerHTML = `
-                    <div>
-                        <p class="text-sm text-gray-800">${note.message}</p>
-                        ${note.context ? `<p class="mt-2 pt-2 border-t border-amber-200 text-xs text-gray-600 font-medium">${note.context}</p>` : ''}
-                        ${note.pedido ? `<p class="text-xs text-gray-500">Pedido: ${note.pedido} ${note.dataFaturamento ? `(NF: ${note.dataFaturamento})` : ''}</p>` : ''}
-                    </div>
-                    <div class="flex justify-between items-center mt-2 text-xs">
-                        <span class="font-semibold text-purple-700">${note.pdManagerName}</span>
-                        <div class="flex items-center gap-2">
-                           <span class="text-gray-400">${time}</span>
-                           <button class="delete-post-it-btn text-gray-400 hover:text-red-500" data-note-id="${note.id}" title="Excluir nota">&times;</button>
-                        </div>
-                    </div>
-                 `;
-                 postItList.appendChild(card);
-             });
-        }
-        
-        function openPostItModal(e) {
-             const sampleId = e.currentTarget.dataset.sampleId;
-             currentSampleForPostIt = allCurrentSamples.find(s => s.id === sampleId);
-             if (!currentSampleForPostIt) {
-                 showAlert("Erro: Amostra não encontrada.");
-                 return;
-             }
-             
-             postItModalContext.textContent = `${currentSampleForPostIt.produto} (${currentSampleForPostIt.sellerName})`;
-             postItModalDetails.textContent = `Pedido: ${currentSampleForPostIt.pedido} | Cliente: ${currentSampleForPostIt.razaoSocial}`;
-             postItModalMessage.value = '';
-             contextPostItModal.classList.remove('hidden');
-        }
-        
-        async function addPostItFromInput() {
-             const message = postItInput.value.trim();
-             if (!message) return;
-             await sendPostIt(message, null);
-             postItInput.value = '';
-        }
-        
-        async function sendPostIt(message, contextSample) {
-            if (!message || !currentPdManagerName || !currentSessionId) {
-                showAlert("Não é possível guardar a nota. Verifique se está logado e se a mensagem não está vazia.");
-                return;
-            }
-
-            const button = contextSample ? sendPostItBtn : addPostItBtn;
-            const originalText = button.textContent;
-            button.disabled = true;
-            button.textContent = 'A guardar...';
-
-            try {
-                const noteData = {
-                    message: message,
-                    pdManagerName: currentPdManagerName,
-                    timestamp: serverTimestamp(),
-                    context: contextSample ? `${contextSample.produto} (${contextSample.sellerName})` : null,
-                    pedido: contextSample ? contextSample.pedido : null,
-                    dataFaturamento: contextSample ? contextSample.emissaoNF : null // Usando emissaoNF como data
-                };
-                
-                await addDoc(collection(db, "sessoes", currentSessionId, "pdPostits"), noteData);
-                
-                if (contextPostItModal.classList.contains('hidden')) {
-                    showAlert("Nota rápida adicionada.", "Sucesso", "text-green-600");
+                    requestNotificationPermission();
+                    startRealtimeListener(); // Ouve a sub-coleção 'amostras'
+                    listenForSellerNotifications(); // Ouve notificações
+                    return true;
                 } else {
-                    contextPostItModal.classList.add('hidden');
+                    // Falha no login
+                    if (isAutoLogin) {
+                        localStorage.clear();
+                    } else if (docSnap.exists()) {
+                        accessError.textContent = 'Código de Acesso inválido. Tente novamente.';
+                    } else {
+                        accessError.textContent = 'Vendedor não encontrado nesta sessão. Verifique o nome.';
+                    }
+                    loadingState.classList.add('hidden');
+                    accessView.classList.remove('hidden');
+                    return false;
                 }
-                
-            } catch (error) {
-                handleFirestoreError(error, "guardar post-it");
+            } catch (e) {
+                // Erro de rede ou outro
+                if (!isAutoLogin) accessError.textContent = 'Erro ao conectar. Verifique sua internet.';
+                console.error("Erro de autenticação ou busca (v2):", e);
+                if (isAutoLogin) localStorage.clear();
+                loadingState.classList.add('hidden');
+                accessView.classList.remove('hidden');
+                return false;
             } finally {
-                button.disabled = false;
-                button.textContent = originalText;
-                currentSampleForPostIt = null;
+                // Re-habilita o botão de login
+                if (!isAutoLogin && loadDataBtn) {
+                     loadDataBtn.disabled = false;
+                     loadDataBtn.textContent = 'Aceder Amostras';
+                     loadDataBtn.classList.remove('btn-loading');
+                }
             }
         }
-        
-        async function deletePostIt(e) {
-             const button = e.currentTarget;
-             const noteId = button.dataset.noteId;
-             if (!noteId || !currentSessionId) return;
+
+        // --- Event Listeners ---
+        loadDataBtn.addEventListener('click', () => {
+             loadDataBtn.disabled = true;
+             loadDataBtn.textContent = 'A verificar...';
+             loadDataBtn.classList.add('btn-loading');
              
-             if (!confirm("Tem a certeza que quer excluir este post-it?")) return;
-             
-             button.disabled = true;
-             try {
-                 await deleteDoc(doc(db, "sessoes", currentSessionId, "pdPostits", noteId));
-                 // O listener 'listenForPdPostits' vai atualizar a UI
-             } catch (error) {
-                 handleFirestoreError(error, "excluir post-it");
-                 button.disabled = false;
-             }
+            const sellerName = document.getElementById('seller-name-input').value.trim();
+            const accessCode = document.getElementById('access-code-input').value.trim();
+            attemptLogin(sellerName, accessCode);
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('sellerName_v2');
+            localStorage.removeItem('sellerAccessCode_v2');
+            if (unsubscribeSamples) unsubscribeSamples();
+            if (sellerNotificationListenerUnsubscribe) sellerNotificationListenerUnsubscribe();
+            window.location.reload();
+        });
+
+        // Listeners dos Modais
+        sellerNotificationBtn.addEventListener('click', showSellerNotifications);
+        closeSellerNotificationsBtn.addEventListener('click', hideSellerNotifications);
+        closeSellerNotificationsBtnBottom.addEventListener('click', hideSellerNotifications);
+        cancelSellerReplyBtn.addEventListener('click', () => {
+            sellerReplyModal.classList.add('hidden');
+            showSellerNotifications();
+        });
+        sendSellerReplyBtn.addEventListener('click', sendReplyToManager);
+
+        feedbackOptionsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('feedback-choice-btn')) {
+                feedbackOptionsContainer.querySelectorAll('.feedback-choice-btn').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600'));
+                e.target.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                selectedFeedback = e.target.dataset.feedback;
+                validateFeedbackForm();
+            }
+        });
+        cancelFeedbackModalBtn.addEventListener('click', () => feedbackModal.classList.add('hidden'));
+        observationInput.addEventListener('input', validateFeedbackForm);
+        saveFeedbackBtn.addEventListener('click', saveFeedback);
+
+
+        // --- Listeners de Dados (v2) ---
+        function startRealtimeListener() {
+            if (unsubscribeSamples) unsubscribeSamples();
+            if (!currentSellerDocRef) {
+                 console.error("Seller document reference not set.");
+                 loadingState.innerHTML = `<h1 class="text-2xl font-bold text-red-600">Erro.</h1><p class="mt-2">Não foi possível carregar os dados. Tente fazer login novamente.</p>`;
+                 return;
+            }
+            
+            // Ouve a sub-coleção 'amostras'
+            const samplesQuery = query(
+                collection(db, currentSellerDocRef.path, "amostras")
+            );
+
+            unsubscribeSamples = onSnapshot(samplesQuery, (snapshot) => {
+                loadingState.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+
+                allSellerSamples = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                if (allSellerSamples.length === 0) {
+                    noDataMessage.classList.remove('hidden');
+                    document.getElementById('pending-section').classList.add('hidden');
+                    document.getElementById('completed-section').classList.add('hidden');
+                } else {
+                    noDataMessage.classList.add('hidden');
+                    const pendingSamplesForDisplay = allSellerSamples.filter(s => !s.finalizedByVendor);
+                    const completedSamples = allSellerSamples.filter(s => s.finalizedByVendor);
+
+                    renderOrders(pendingSamplesForDisplay, 'pending');
+                    renderOrders(completedSamples, 'completed');
+                }
+            }, (error) => {
+                handleFirestoreError(error, `ouvir amostras (sessão: ${currentSessionId})`);
+                loadingState.innerHTML = `<h1 class="text-2xl font-bold text-red-600">Erro de conexão.</h1><p class="mt-2">Tente recarregar a página.</p>`;
+                mainContent.classList.add('hidden');
+            });
         }
-        
-        // --- Destaques (v2) ---
-        function listenForDestaques(sessionId) {
-            if (destaquesListenerUnsubscribe) destaquesListenerUnsubscribe();
-            
-            const destaquesRef = doc(db, "sessoes", sessionId, "configuracoes", "destaquesAmostras");
-            
-            destaquesListenerUnsubscribe = onSnapshot(destaquesRef, (docSnap) => {
-                 highlightedSamplesCache = docSnap.exists() ? (docSnap.data().lista || []) : [];
-                 // Re-renderiza o feed de observações para mostrar/ocultar estrelas
-                 if (!dashboardContent.classList.contains('hidden')) {
-                     renderObservationsFeed(allCurrentSamples);
+
+        // Ouve notificações para este vendedor
+        function listenForSellerNotifications() {
+            if (!currentSessionId || !currentSellerOriginalName) {
+                console.warn("Não é possível ouvir notificações: Sessão ou Nome do Vendedor em falta.");
+                return;
+            }
+            if (sellerNotificationListenerUnsubscribe) sellerNotificationListenerUnsubscribe();
+
+            const q = query(
+                collection(db, "sessoes", currentSessionId, "notificacoesVendedor"),
+                where("sellerName", "==", currentSellerOriginalName)
+            );
+
+            sellerNotificationListenerUnsubscribe = onSnapshot(q, (snapshot) => {
+                 const previousUnreadCount = sellerNotifications.filter(n => !n.read).length;
+                 sellerNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                 sellerNotifications.sort((a, b) => (b.timestamp?.toDate() ?? 0) - (a.timestamp?.toDate() ?? 0));
+                 const currentUnreadCount = sellerNotifications.filter(n => !n.read).length;
+
+                 updateSellerNotificationBadge();
+
+                 // Aciona notificação do navegador se houver novas
+                 if (currentUnreadCount > previousUnreadCount && !snapshot.metadata.hasPendingWrites) {
+                     snapshot.docChanges().forEach((change) => {
+                         if (change.type === "added" && !change.doc.metadata.fromCache) {
+                             const newData = change.doc.data();
+                             if (!newData.read) {
+                                 showBrowserNotification(
+                                     `Resposta de ${newData.managerName}`,
+                                     `Ref. ${newData.produto} (${newData.pedido}): ${newData.replyMessage}`
+                                 );
+                             }
+                         }
+                     });
                  }
             }, (error) => {
-                 handleFirestoreError(error, "ouvir destaques");
+                handleFirestoreError(error, "ouvir notificações do vendedor");
+            });
+        }
+
+        // --- Funções de Renderização da UI ---
+        function renderOrders(samplesToDisplay, type) {
+            const isPendingSection = type === 'pending';
+            const container = document.getElementById(`${type}-orders-list`);
+            const section = document.getElementById(`${type}-section`);
+
+            if (!container || !section) return;
+
+            if (samplesToDisplay.length === 0) {
+                section.classList.add('hidden');
+                if (isPendingSection) {
+                     const countEl = document.getElementById('pending-orders-count');
+                     if (countEl) countEl.textContent = `Nenhum Pedido Pendente`;
+                 }
+                return;
+            }
+
+            section.classList.remove('hidden');
+            container.innerHTML = '';
+
+            // Agrupa amostras por pedido
+            const groupedByOrder = samplesToDisplay.reduce((acc, sample) => {
+                const key = sample.pedido;
+                if (!acc[key]) acc[key] = { ...sample, samples: [] };
+                acc[key].samples.push(sample);
+                return acc;
+            }, {});
+
+            // Ordena pedidos
+             const sortedOrderKeys = Object.keys(groupedByOrder).sort((a, b) => {
+                 const numA = parseInt(a, 10);
+                 const numB = parseInt(b, 10);
+                 if (!isNaN(numA) && !isNaN(numB)) {
+                     return numA - numB;
+                 }
+                 return a.localeCompare(b);
+             });
+
+            if (isPendingSection) {
+                const countEl = document.getElementById('pending-orders-count');
+                 if (countEl) countEl.textContent = `${sortedOrderKeys.length} Pedido(s) ${sortedOrderKeys.length > 1 ? '' : ' '}com Pendências`;
+            }
+
+            // Cria o HTML para cada grupo de pedido
+             sortedOrderKeys.forEach(orderId => {
+                 const order = groupedByOrder[orderId];
+                const orderGroup = document.createElement('div');
+                const allSamplesInThisOrderAnswered = order.samples.every(s => !s.isPending);
+                const statusColor = isPendingSection ? (allSamplesInThisOrderAnswered ? 'blue' : 'yellow') : 'green';
+                orderGroup.className = `bg-white rounded-2xl shadow-sm border-l-4 border-${statusColor}-400 fade-in`;
+
+                // Cria o HTML para as linhas da tabela de amostras
+                const samplesTableRowsHTML = order.samples.map(sample => {
+                    const qty = parseFloat(String(sample.qtde || '0').replace(',', '.'));
+                    let formattedQty = '';
+                    if (!isNaN(qty)) {
+                        formattedQty = qty >= 1 || qty === 0 ? `${qty.toFixed(3).replace('.', ',')}kg` : `${Math.round(qty * 1000)}g`;
+                    } else {
+                        formattedQty = sample.qtde || 'N/A';
+                    }
+
+                    const feedbackDisplay = sample.isPending
+                        ? '<span class="text-yellow-600 font-semibold">Pendente</span>'
+                        : `<div>${sample.feedback || 'N/A'}</div><div class='text-gray-500 font-normal text-xs'>${sample.observation || ''}</div>`;
+
+                    const deleteButtonHtml = !sample.isPending && isPendingSection
+                        ? `<button class="delete-btn bg-red-100 text-red-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-red-200" data-sample-id='${sample.id}'>Excluir</button>`
+                        : '';
+                    const updateButtonText = sample.isPending ? 'Atualizar' : 'Editar';
+                    
+                    const updateButtonHtml = `<button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${updateButtonText}</button>`;
+                    const dotColorClass = sample.isPending ? 'dot-yellow' : 'dot-green';
+
+                    return `
+                        <tr class="border-b last:border-b-0">
+                            <td class="p-3">
+                                <span class="status-dot ${dotColorClass}"></span>
+                                <div class="inline-block align-middle">
+                                    <p class="font-semibold">${sample.produto}</p>
+                                    <p class="text-xs text-gray-500">${sample.descricao || ''}</p>
+                                </div>
+                            </td>
+                            <td class="p-3">${formattedQty}</td>
+                            <td class="p-3 hidden md:table-cell">${sample.originalStatus || 'N/A'}</td>
+                            <td class="p-3">${feedbackDisplay}</td>
+                            <td class="p-3 text-right space-x-2">
+                                ${updateButtonHtml}
+                                ${deleteButtonHtml}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Monta o card do pedido
+                orderGroup.innerHTML = `
+                    <div class="p-4 flex justify-between items-center cursor-pointer order-header">
+                        <div>
+                            <h3 class="font-bold text-lg flex items-center"><span class="w-3 h-3 bg-${statusColor}-400 rounded-full mr-3"></span>${order.pedido} - ${order.razaoSocial || 'Cliente Desconhecido'}</h3>
+                            <p class="text-sm text-gray-500 ml-6">Nota Fiscal: ${order.notaFiscal || 'N/A'}</p>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="overflow-x-auto samples-table hidden">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-gray-50 text-left">
+                                <tr>
+                                    <th class="p-3 font-medium text-gray-500">Produto</th>
+                                    <th class="p-3 font-medium text-gray-500">Qtde.</th>
+                                    <th class="p-3 font-medium text-gray-500 hidden md:table-cell">Status Atual</th>
+                                    <th class="p-3 font-medium text-gray-500">Feedback</th>
+                                    <th class="p-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody>${samplesTableRowsHTML}</tbody>
+                        </table>
+                        <!-- Botão de Sinalizar Gestor (se pendente) -->
+                        ${isPendingSection && allSamplesInThisOrderAnswered ? `
+                        <div class="p-4 border-t text-right bg-blue-50">
+                            <p class="text-sm text-gray-700 text-left mb-2">Todas as amostras deste pedido foram respondidas. Clique abaixo para notificar o gestor.</p>
+                            <button class="signal-manager-btn bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-sm hover:bg-blue-700" data-order-id="${order.pedido}">Sinalizar Gestor</button>
+                        </div>` : ''}
+                        <!-- Botão de Reenviar Notificação (se completo) -->
+                        ${!isPendingSection ? `
+                        <div class="p-3 border-t text-xs text-gray-500 bg-gray-50 flex justify-between items-center">
+                             <span>Este pedido já foi sinalizado para o gestor.</span>
+                             <button class="resend-notification-btn bg-gray-200 text-gray-700 font-semibold py-1 px-3 rounded-lg text-xs hover:bg-gray-300" data-order-id="${order.pedido}">Reenviar Notificação</button>
+                        </div>` : ''}
+                    </div>
+                `;
+
+                container.appendChild(orderGroup);
+            });
+
+            // Adiciona listeners aos elementos recém-criados
+            container.querySelectorAll('.order-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const tableDiv = header.nextElementSibling;
+                    const arrow = header.querySelector('svg');
+                    tableDiv?.classList.toggle('hidden');
+                    arrow?.classList.toggle('rotate-180');
+                });
+            });
+
+             container.querySelectorAll('.update-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const sampleToUpdate = allSellerSamples.find(s => s.id === btn.dataset.sampleId);
+                    if (sampleToUpdate) openFeedbackModal(sampleToUpdate);
+                });
+            });
+
+             container.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const sampleId = e.currentTarget.dataset.sampleId;
+                    if (!confirm('Tem a certeza de que quer excluir este feedback e voltar a amostra para pendente?')) {
+                         return;
+                    }
+                    e.currentTarget.disabled = true;
+                    e.currentTarget.classList.add('btn-loading');
+                    
+                    const updates = { 
+                        isPending: true, 
+                        feedback: '', 
+                        observation: '', 
+                        finalizedByVendor: false, 
+                        editedAfterCompletion: false, 
+                        lastUpdate: Timestamp.now()
+                    };
+                    await updateSampleData(sampleId, updates, e.currentTarget);
+                });
+            });
+            
+            container.querySelectorAll('.signal-manager-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleSignalManager(e.currentTarget, false));
+            });
+            
+            container.querySelectorAll('.resend-notification-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleSignalManager(e.currentTarget, true));
             });
         }
         
-        async function toggleDestaqueAmostra(e) {
-            e.stopPropagation();
-            const sampleId = e.currentTarget.dataset.sampleId;
-            if (!currentSessionId || !sampleId) return;
-
-            const destaquesRef = doc(db, "sessoes", currentSessionId, "configuracoes", "destaquesAmostras");
-            const button = e.currentTarget;
+        // Função para Sinalizar Gestor / Reenviar Notificação (v2)
+        async function handleSignalManager(button, isResend) {
+            const orderId = button.dataset.orderId;
+            const originalText = button.textContent;
             button.disabled = true;
+            button.classList.add('btn-loading');
+            button.textContent = isResend ? 'A Reenviar...' : 'A Sinalizar...';
 
             try {
-                await runTransaction(db, async (transaction) => {
-                    const destaquesDoc = await transaction.get(destaquesRef);
-                    const currentList = destaquesDoc.exists() ? (destaquesDoc.data().lista || []) : [];
-                    let updatedList = [...currentList];
+                // 1. (Apenas ao Sinalizar) Atualiza amostras para 'finalizedByVendor: true'
+                if (!isResend) {
+                    const batch = writeBatch(db);
+                    const samplesToUpdate = allSellerSamples.filter(s => s.pedido === orderId && !s.isPending);
+                    
+                    samplesToUpdate.forEach(sample => {
+                        // Referência correta ao documento da amostra
+                        const sampleRef = doc(db, currentSellerDocRef.path, "amostras", sample.id);
+                        batch.update(sampleRef, { finalizedByVendor: true });
+                    });
+                    await batch.commit();
+                    console.log(`Pedido ${orderId} marcado como finalizado pelo vendedor.`);
+                }
 
-                    if (updatedList.includes(sampleId)) {
-                        updatedList = updatedList.filter(id => id !== sampleId);
-                    } else {
-                        updatedList.push(sampleId);
-                    }
-                    transaction.set(destaquesRef, { lista: updatedList });
+                // 2. Envia notificação ao gestor
+                const sellerName = currentSellerOriginalName;
+                const message = isResend 
+                    ? `<strong>${sellerName}</strong> reenviou a notificação do pedido: <strong>${orderId}</strong>.`
+                    : `<strong>${sellerName}</strong> sinalizou o pedido: <strong>${orderId}</strong> como concluído.`;
+                const color = isResend ? 'blue' : 'purple';
+                
+                const notifRef = collection(db, "sessoes", currentSessionId, "notificacoes");
+                await addDoc(notifRef, {
+                    message,
+                    color: color,
+                    timestamp: serverTimestamp(),
+                    triggerPopup: isResend
                 });
-            } catch (error) {
-                handleFirestoreError(error, "atualizar destaques");
-            } finally {
-                 button.disabled = false; // O listener irá atualizar o ícone
+
+                if(isResend) {
+                    button.textContent = 'Reenviado!';
+                }
+                
+                setTimeout(() => {
+                    if (isResend) {
+                        button.disabled = false;
+                        button.classList.remove('btn-loading');
+                        button.textContent = originalText;
+                    }
+                }, 2000);
+
+            } catch(error) {
+                handleFirestoreError(error, `sinalizar gestor (pedido: ${orderId})`);
+                button.disabled = false;
+                button.classList.remove('btn-loading');
+                button.textContent = originalText;
             }
         }
 
 
-        // --- Event Listeners Globais ---
-        pdLoginBtn.addEventListener('click', login);
-        logoutBtn.addEventListener('click', logout);
-        observationSearchInput.addEventListener('input', () => renderObservationsFeed(allCurrentSamples));
-        closeFeedbackSamplesBtn.addEventListener('click', () => feedbackSamplesModal.classList.add('hidden'));
-        
-        // Modais de Resposta e Post-it
-        cancelReplyBtn.addEventListener('click', () => replyModal.classList.add('hidden'));
-        sendReplyBtn.addEventListener('click', sendReplyToSeller);
-        cancelPostItBtn.addEventListener('click', () => contextPostItModal.classList.add('hidden'));
-        sendPostItBtn.addEventListener('click', () => {
-             const message = postItModalMessage.value.trim();
-             sendPostIt(message, currentSampleForPostIt);
-        });
-        
-        // Caixa de Post-it principal
-        addPostItBtn.addEventListener('click', addPostItFromInput);
-        postItList.addEventListener('click', (e) => {
-             const button = e.target.closest('.delete-post-it-btn');
-             if (button) deletePostIt({ currentTarget: button });
-        });
+        // --- Funções do Modal de Feedback (v2) ---
+        function openFeedbackModal(sample) {
+            currentSample = sample;
+            selectedFeedback = sample.feedback || null;
+            observationInput.value = sample.observation || '';
+            modalSampleInfo.textContent = `${sample.produto} - ${sample.descricao || ''}`;
+            modalTitle.textContent = sample.isPending ? 'Atualizar Feedback' : 'Editar Feedback';
 
-        // Modal de Notificações (Respostas dos Gestores)
-        notificationBtn.addEventListener('click', () => {
-             // Re-busca as respostas não lidas ao abrir
-             const q = query(
-                 collection(db, "sessoes", currentSessionId, "respostasVendedor"),
-                 where("readByManager", "==", false)
-             );
-             getDocs(q).then(snapshot => {
-                 const replies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                 openNotificationModal(replies);
-             });
-        });
-        closeNotificationBtn.addEventListener('click', () => notificationModal.classList.add('hidden'));
-        notificationList.addEventListener('click', (e) => {
-            const button = e.target.closest('.mark-as-read-btn');
-            if (button) markReplyAsRead({ target: button });
-        });
-        
-        // --- INICIALIZAÇÃO ---
-        (async () => {
-            try {
-                await signInAnonymously(auth);
-                populatePdButtons();
-                
-                // Tenta login automático
-                const savedPdName = localStorage.getItem('pdManagerName');
-                if (savedPdName && PD_PASSWORDS[savedPdName]) {
-                    currentPdManagerName = savedPdName;
-                    pdLoginBtn.disabled = true;
-                    pdLoginBtn.textContent = 'A carregar...';
-                    
-                    const sessionId = await getActiveSessionId();
-                    if (!sessionId) {
-                        loginError.textContent = 'Nenhuma sessão ativa encontrada. Contate o administrador.';
-                        logout();
-                        return;
-                    }
-                    
-                    dashboardTitle.textContent = `Painel P&D: ${currentPdManagerName}`;
-                    await loadAllData(sessionId);
+            feedbackOptionsContainer.innerHTML = '';
+            FEEDBACK_CHOICES.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice;
+                button.dataset.feedback = choice;
+                button.className = 'feedback-choice-btn border border-gray-300 text-gray-700 text-sm font-semibold py-2 px-2 rounded-lg hover:bg-gray-100 transition-all';
+                if (choice === selectedFeedback) button.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                feedbackOptionsContainer.appendChild(button);
+            });
+
+            validateFeedbackForm();
+            feedbackModal.classList.remove('hidden');
+        }
+
+        // Valida o formulário
+        function validateFeedbackForm() {
+             saveFeedbackBtn.disabled = !observationInput.value.trim() || !selectedFeedback;
+        }
+
+        // Salva o feedback
+        async function saveFeedback() {
+            if (saveFeedbackBtn.disabled) return;
+            
+            saveFeedbackBtn.disabled = true;
+            saveFeedbackBtn.classList.add('btn-loading');
+            saveFeedbackBtn.textContent = 'A guardar...';
+
+            // Verifica se é uma edição
+             const isEditing = !currentSample.isPending;
+             const oldFeedback = currentSample.feedback;
+             const oldObservation = currentSample.observation;
+             const newFeedback = selectedFeedback;
+             const newObservation = observationInput.value.trim();
+             const wasEdited = isEditing && (oldFeedback !== newFeedback || oldObservation !== newObservation);
+
+            // Prepara os dados para atualização
+            const updates = {
+                isPending: false,
+                feedback: newFeedback,
+                observation: newObservation,
+                editedAfterCompletion: wasEdited,
+                lastUpdate: Timestamp.now()
+            };
+
+            // Atualiza a amostra individual
+            await updateSampleData(currentSample.id, updates, saveFeedbackBtn);
+            
+            feedbackModal.classList.add('hidden'); // Fecha o modal
+
+            // Envia notificação ao gestor SE for uma edição
+            if (wasEdited) {
+                try {
+                    const sellerName = currentSellerOriginalName;
+                    const message = `<strong>${sellerName}</strong> <i>editou</i> o feedback para <strong>${currentSample.produto}</strong> (Pedido ${currentSample.pedido}): ${newFeedback}`;
+                    const notifRef = collection(db, "sessoes", currentSessionId, "notificacoes");
+                    await addDoc(notifRef, {
+                        message,
+                        color: 'orange',
+                        timestamp: serverTimestamp(),
+                        triggerPopup: true
+                    });
+                    console.log("Notificação de edição enviada.");
+                } catch (notifError) {
+                    console.error("Erro ao enviar notificação de edição:", notifError);
                 }
-                
-            } catch (error) {
-                console.error("Firebase Auth Error:", error);
-                document.body.innerHTML = '<p class="text-center text-red-500 p-8">Erro crítico ao conectar com o Firebase. Verifique a configuração.</p>';
             }
+        }
+
+        // Função de atualização de amostra individual (v2)
+        async function updateSampleData(sampleId, updates, buttonToReset = null) {
+            if (!currentSellerDocRef) {
+                console.error("Referência do vendedor não definida.");
+                showAlert("Erro: Não foi possível encontrar a referência do vendedor. Tente recarregar a página.");
+                return;
+            }
+
+            // Referência correta ao documento da amostra
+            const sampleRef = doc(db, currentSellerDocRef.path, "amostras", sampleId);
+            
+            try {
+                await updateDoc(sampleRef, updates);
+                console.log(`Amostra ${sampleId} atualizada.`);
+            } catch (error) {
+                handleFirestoreError(error, `guardar feedback (amostra: ${sampleId})`);
+            } finally {
+                // Re-ativa o botão, quer tenha sucesso ou falhe
+                if (buttonToReset) {
+                    buttonToReset.disabled = false;
+                    buttonToReset.classList.remove('btn-loading');
+                    if(buttonToReset.id === 'save-button') buttonToReset.textContent = 'Salvar';
+                    if(buttonToReset.classList.contains('delete-btn')) buttonToReset.textContent = 'Excluir';
+                }
+            }
+        }
+
+
+        // --- Funções de Notificação do Vendedor (v2) ---
+
+        // Atualiza o crachá do sino
+        function updateSellerNotificationBadge() {
+             if(!sellerNotificationCount || !notificationPrompt) return;
+            const unreadCount = sellerNotifications.filter(n => !n.read).length;
+            if (unreadCount > 0) {
+                sellerNotificationCount.textContent = unreadCount;
+                sellerNotificationCount.classList.remove('hidden');
+                notificationPrompt.classList.remove('hidden');
+            } else {
+                sellerNotificationCount.classList.add('hidden');
+                notificationPrompt.classList.add('hidden');
+            }
+        }
+
+        // Mostra o modal de notificações
+        function showSellerNotifications() {
+            sellerNotificationsList.innerHTML = '';
+            if (sellerNotifications.length === 0) {
+                 sellerNotificationsList.innerHTML = '<p class="text-gray-500">Nenhuma resposta recebida.</p>';
+            } else {
+                 sellerNotifications.forEach(notif => {
+                     const itemDiv = document.createElement('div');
+                     const hasSellerReply = notif.sellerReplyMessage && notif.sellerReplyMessage.trim() !== '';
+
+                     const replyButtonHtml = `<button class="seller-reply-btn bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-xs font-semibold ml-2" data-notif-id="${notif.id}">
+                                                  ${hasSellerReply ? 'Ver/Responder' : 'Responder'}
+                                             </button>`;
+                     const readButtonHtml = !notif.read
+                         ? `<button class="mark-as-read-btn bg-gray-200 text-gray-700 hover:bg-gray-300 px-2 py-1 rounded text-xs font-semibold ml-2" data-notif-id="${notif.id}">✓ Marcar como Lida</button>`
+                         : `<span class="text-green-500 text-xs font-semibold ml-2">✓ Lida</span>`;
+
+                     itemDiv.className = `seller-notification-item text-sm ${!notif.read ? 'font-semibold bg-blue-50 p-2 rounded' : 'text-gray-600 p-2'}`;
+                     itemDiv.innerHTML = `
+                         <p class="mb-1">
+                             <span class="font-bold">${notif.managerName}</span> respondeu sobre:
+                         </p>
+                         <div class="mb-2 p-2 bg-gray-100 rounded border text-xs">
+                             <p><strong>Cliente:</strong> ${notif.razaoSocial || 'N/A'}</p>
+                             <p><strong>Produto:</strong> ${notif.produto || 'N/A'} (${notif.descricao || 'N/A'})</p>
+                         </div>
+                         
+                         <div class="manager-reply">${notif.replyMessage}</div>
+
+                         ${hasSellerReply ? `
+                         <div class="seller-reply">
+                              <p><strong>Você respondeu:</strong> ${notif.sellerReplyMessage}</p>
+                         </div>` : ''}
+
+                         ${notif.originalObservation ? `<blockquote>Observação Original: "${notif.originalObservation}"</blockquote>` : ''}
+
+                         <div class="flex justify-between items-center mt-2">
+                              <p class="text-xs text-gray-400">${notif.timestamp?.toDate() ? notif.timestamp.toDate().toLocaleString('pt-BR') : ''}</p>
+                              <div class="flex gap-2">
+                                   ${replyButtonHtml}
+                                   ${readButtonHtml}
+                              </div>
+                         </div>
+                     `;
+                     sellerNotificationsList.appendChild(itemDiv);
+                 });
+
+                 sellerNotificationsList.querySelectorAll('.mark-as-read-btn').forEach(btn => {
+                     btn.addEventListener('click', markNotificationAsRead);
+                 });
+                 sellerNotificationsList.querySelectorAll('.seller-reply-btn').forEach(btn => {
+                     btn.addEventListener('click', openSellerReplyModal);
+                 });
+            }
+            sellerNotificationsModal.classList.remove('hidden');
+            notificationPrompt.classList.add('hidden');
+        }
+
+        // Esconde o modal de notificações
+        function hideSellerNotifications() {
+            sellerNotificationsModal.classList.add('hidden');
+        }
+
+        // Marca notificação como lida
+        async function markNotificationAsRead(e) {
+            const notifId = e.target.dataset.notifId;
+            e.target.disabled = true;
+            e.target.textContent = 'A marcar...';
+            const notifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", notifId);
+            try {
+                await updateDoc(notifRef, { read: true });
+                 const notifIndex = sellerNotifications.findIndex(n => n.id === notifId);
+                 if (notifIndex > -1) {
+                      sellerNotifications[notifIndex].read = true;
+                 }
+                 showSellerNotifications();
+                 updateSellerNotificationBadge();
+            } catch (err) {
+                handleFirestoreError(err, "marcar notificação como lida");
+                e.target.disabled = false;
+                e.target.textContent = '✓ Marcar como Lida';
+            }
+        }
+
+        // Abre modal para responder ao gestor
+        function openSellerReplyModal(e) {
+            const notifId = e.target.dataset.notifId;
+            const notification = sellerNotifications.find(n => n.id === notifId);
+            if (!notification) return;
+
+            currentNotificationForReply = notification;
+
+            sellerReplyContext.textContent = `Em resposta a ${notification.managerName} (Ref. ${notification.produto}):`;
+            sellerReplyOriginalMsg.textContent = `"${notification.replyMessage}"`;
+            sellerReplyMessageInput.value = notification.sellerReplyMessage || '';
+
+            sellerNotificationsModal.classList.add('hidden');
+            sellerReplyModal.classList.remove('hidden');
+        }
+
+        // Envia resposta ao gestor
+        async function sendReplyToManager() {
+            if (!currentNotificationForReply || !currentSessionId || !currentSellerOriginalName) return;
+
+            const replyMessage = sellerReplyMessageInput.value.trim();
+            if (!replyMessage) {
+                showAlert("Por favor, escreva a sua resposta.");
+                return;
+            }
+
+            sendSellerReplyBtn.disabled = true;
+            sendSellerReplyBtn.classList.add('btn-loading');
+            sendSellerReplyBtn.textContent = 'A Enviar...';
+
+            try {
+                // 1. Cria o documento de resposta para o gestor
+                const replyDataForManager = {
+                    sellerName: currentSellerOriginalName,
+                    replyMessage: replyMessage,
+                    originalManagerMessage: currentNotificationForReply.replyMessage,
+                    originalManagerName: currentNotificationForReply.managerName,
+                    pedido: currentNotificationForReply.pedido,
+                    produto: currentNotificationForReply.produto,
+                    timestamp: serverTimestamp(),
+                    readByManager: false
+                };
+                const managerRepliesRef = collection(db, "sessoes", currentSessionId, "respostasVendedor");
+                await addDoc(managerRepliesRef, replyDataForManager);
+
+                // 2. Atualiza a notificação original do vendedor
+                const originalNotifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", currentNotificationForReply.id);
+                await updateDoc(originalNotifRef, {
+                    sellerReplyMessage: replyMessage,
+                    read: true
+                });
+
+                 // Atualiza UI local
+                 const notifIndex = sellerNotifications.findIndex(n => n.id === currentNotificationForReply.id);
+                 if (notifIndex > -1) {
+                      sellerNotifications[notifIndex].read = true;
+                      sellerNotifications[notifIndex].sellerReplyMessage = replyMessage;
+                 }
+                 updateSellerNotificationBadge();
+                 sellerReplyModal.classList.add('hidden');
+                 showSellerNotifications();
+
+            } catch (error) {
+                handleFirestoreError(error, "enviar resposta ao gestor");
+            } finally {
+                sendSellerReplyBtn.disabled = false;
+                sendSellerReplyBtn.classList.remove('btn-loading');
+                sendSellerReplyBtn.textContent = 'Enviar Resposta';
+                currentNotificationForReply = null;
+            }
+        }
+
+
+        // --- Funções de Notificação do Navegador ---
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                console.warn("Este navegador não suporta notificações desktop");
+                return;
+            }
+            if (Notification.permission !== 'denied') {
+                 Notification.requestPermission().then(permission => {
+                     console.log("Permissão de notificação:", permission);
+                 });
+            }
+        }
+
+        function showBrowserNotification(title, body) {
+            if (Notification.permission === 'granted') {
+                 if (document.visibilityState === 'visible') {
+                      console.log("Tab is active, skipping browser notification.");
+                      return;
+                 }
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: 'https://img.icons8.com/fluency/96/send-letter.png'
+                });
+            }
+        }
+
+
+        // --- Carregamento Inicial ---
+        async function checkLocalStorage() {
+            const savedSellerName = localStorage.getItem('sellerName_v2');
+            const savedAccessCode = localStorage.getItem('sellerAccessCode_v2');
+
+            if (savedSellerName && savedAccessCode) {
+                 loadingMessage.textContent = 'A verificar sessão guardada...';
+                 accessView.classList.add('hidden');
+                 loadingState.classList.remove('hidden');
+                 const loginSuccess = await attemptLogin(savedSellerName, savedAccessCode, true);
+                 if (!loginSuccess) {
+                     console.log("Auto-login falhou. A mostrar ecrã de login.");
+                 }
+            } else {
+                 accessView.classList.remove('hidden');
+                 loadingState.classList.add('hidden');
+            }
+        }
+
+        (async () => {
+             try {
+                 await signInAnonymously(auth);
+                 await checkLocalStorage();
+             } catch (error) {
+                 console.error("Firebase Auth Error:", error);
+                 accessError.textContent = "Não foi possível conectar ao serviço.";
+                 accessView.classList.remove('hidden');
+                 loadingState.classList.add('hidden');
+             }
         })();
 
     </script>
 </body>
 </html>
+
+
+
 
 
 
