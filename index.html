@@ -243,7 +243,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        // *** CORREÇÃO: Removido 'serverTimestamp' das importações diretas (embora ainda exista), Adicionado 'Timestamp' ***
+        // *** CORREÇÃO: Adicionado 'runTransaction' e 'Timestamp' ***
         import { getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, serverTimestamp, query, where, writeBatch, limit, addDoc, Timestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -626,10 +626,7 @@
                         : '';
                     const updateButtonText = sample.isPending ? 'Atualizar' : 'Editar';
                     
-                    // *** CORREÇÃO AQUI ***
-                    // O botão agora é sempre renderizado. O texto ('Atualizar' ou 'Editar')
-                    // é controlado pela flag 'sample.isPending'.
-                    // Itens concluídos sempre terão 'sample.isPending = false', mostrando "Editar".
+                    // O botão agora é sempre renderizado.
                     const updateButtonHtml = `<button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${updateButtonText}</button>`;
 
                     // Status dot and color logic
@@ -713,27 +710,20 @@
              container.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const sampleId = e.currentTarget.dataset.sampleId;
-                    // Usar o modal customizado em vez de confirm()
-                    if (customAlert.classList.contains('hidden')) { // Evitar sobreposição
-                        // Vamos usar um confirm simples por enquanto, pois não temos um modal de confirmação
-                        // O ideal seria criar um modal de "Confirmar"
-                        if (!confirm('Tem a certeza que quer excluir este feedback e voltar a amostra para pendente?')) {
-                             return;
-                        }
-                    } else {
-                         return; // Modal de alerta já está aberto
+                    if (!confirm('Tem a certeza que quer excluir este feedback e voltar a amostra para pendente?')) {
+                         return;
                     }
                     
                     e.currentTarget.disabled = true;
-                    
-                    // *** CORREÇÃO: Usar new Date() em vez de serverTimestamp() ***
+                    // Reset fields and use client-side timestamp converted to Firestore Timestamp
                     await updateSampleData(sampleId, { 
                         isPending: true, 
                         feedback: '', 
                         observation: '', 
                         finalizedByVendor: false, 
                         editedAfterCompletion: false, 
-                        lastUpdate: new Date() // <-- MUDANÇA AQUI
+                        // *** CORREÇÃO AQUI ***
+                        lastUpdate: Timestamp.fromDate(new Date()) 
                     });
                 });
             });
@@ -741,7 +731,7 @@
                   btn.addEventListener('click', async (e) => {
                       const orderId = e.currentTarget.dataset.orderId;
                       e.currentTarget.disabled = true;
-                      e.currentTarget.textContent = 'A sinalizar...'; 
+                      e.currentTarget.textContent = 'A sinalizar...';
                       
                       try {
                         await runTransaction(db, async (transaction) => {
@@ -754,8 +744,8 @@
                             // Mapear e atualizar apenas as amostras relevantes
                             const updatedSamplesArray = currentSamples.map(sample => {
                                 if (sample.pedido === orderId && !sample.isPending) {
-                                    // *** CORREÇÃO: Usar new Date() em vez de serverTimestamp() ***
-                                    return { ...sample, finalizedByVendor: true, lastUpdate: new Date() }; // <-- MUDANÇA AQUI
+                                    // *** CORREÇÃO AQUI ***
+                                    return { ...sample, finalizedByVendor: true, lastUpdate: Timestamp.fromDate(new Date()) };
                                 }
                                 return sample;
                             });
@@ -764,7 +754,7 @@
                             transaction.update(currentSellerDocRef, { amostras: updatedSamplesArray });
                         });
 
-                        e.currentTarget.textContent = 'Sinalizado!';
+                        e.currentTarget.textContent = 'Sinalizado!'; // Manter feedback de sucesso
                         console.log(`Pedido ${orderId} marcado como finalizado pelo vendedor (via transação).`);
 
                         // Enviar notificação ao gestor (fora da transação)
@@ -775,13 +765,16 @@
                         await setDoc(notifRef, {
                             message,
                             color: 'purple',
-                            timestamp: serverTimestamp(), // serverTimestamp() é OK aqui (não está num array)
+                            timestamp: serverTimestamp(), // serverTimestamp() é OK aqui
                             triggerPopup: false
                         });
 
                       } catch(error) {
                           console.error("Erro ao sinalizar gestor (transação falhou):", error);
                           showAlert("Erro ao sinalizar. Tente novamente.");
+                          // Re-ativar o botão em caso de erro
+                          e.currentTarget.disabled = false;
+                          e.currentTarget.textContent = 'Sinalizar Gestor';
                       }
                   });
               });
@@ -807,33 +800,31 @@
                 feedbackOptionsContainer.appendChild(button);
             });
 
-            saveFeedbackBtn.disabled = false;
-            saveFeedbackBtn.textContent = 'Salvar';
             validateFeedbackForm(); // Check initial form validity
             feedbackModal.classList.remove('hidden'); // Show modal
         }
 
         // Enable/disable save button based on selection and observation
         function validateFeedbackForm() {
-             if (saveFeedbackBtn.textContent === 'A guardar...') {
-                 saveFeedbackBtn.disabled = true;
-             } else {
-                 saveFeedbackBtn.disabled = !observationInput.value.trim() || !selectedFeedback;
-             }
+             // Observation is mandatory, feedback selection is mandatory
+             saveFeedbackBtn.disabled = !observationInput.value.trim() || !selectedFeedback;
         }
 
         // Save feedback and observation to Firestore
         async function saveFeedback() {
             if (saveFeedbackBtn.disabled) return;
-
+            
+            // *** CORREÇÃO: Feedback de "A guardar..." ***
             saveFeedbackBtn.disabled = true;
             saveFeedbackBtn.textContent = 'A guardar...';
 
+             // Determine if this is an edit of a previously completed feedback
              const isEditing = !currentSample.isPending;
              const oldFeedback = currentSample.feedback;
              const oldObservation = currentSample.observation;
              const newFeedback = selectedFeedback;
              const newObservation = observationInput.value.trim();
+             // Mark as edited only if feedback or observation actually changed
              const wasEdited = isEditing && (oldFeedback !== newFeedback || oldObservation !== newObservation);
 
             const updates = {
@@ -841,14 +832,17 @@
                 feedback: newFeedback,
                 observation: newObservation,
                 editedAfterCompletion: wasEdited, // Store edit status
-                // *** CORREÇÃO: Usar new Date() em vez de serverTimestamp() ***
-                lastUpdate: new Date() 
+                // *** CORREÇÃO AQUI ***
+                lastUpdate: Timestamp.fromDate(new Date()) // Use Firestore Timestamp
             };
 
+            // *** CORREÇÃO: Chamar updateSampleData e tratar erros ***
             try {
                 await updateSampleData(currentSample.id, updates); // Update Firestore
-                feedbackModal.classList.add('hidden'); // Fechar modal APENAS em caso de sucesso
+                
+                feedbackModal.classList.add('hidden'); // Close modal only on success
 
+                // Send notification to manager *only* if it was an edit
                 if (wasEdited) {
                     try {
                         const sellerName = currentSellerOriginalName;
@@ -858,71 +852,82 @@
 
                         await setDoc(notifRef, {
                             message,
-                            color: 'orange', 
-                            timestamp: serverTimestamp(), // serverTimestamp() é OK aqui (não está num array)
-                            triggerPopup: true 
+                            color: 'orange', // Orange color for edits
+                            timestamp: serverTimestamp(), 
+                            triggerPopup: true // Trigger browser popup for manager on edits
                         });
                         console.log("Notificação de edição enviada.");
                     } catch (notifError) {
                         console.error("Erro ao enviar notificação de edição:", notifError);
                     }
                 }
-            } catch (error) {
-                console.error("Erro ao guardar feedback:", error);
-                showAlert(`Não foi possível guardar o feedback. Tente novamente.\n\nDetalhe: ${error.message}`);
+            } catch (saveError) {
+                // Se updateSampleData falhar, mostrar alerta e não fechar o modal
+                console.error("Falha ao guardar feedback:", saveError);
+                showAlert(`Não foi possível guardar o feedback. Tente novamente.\n\nDetalhe: ${saveError.message}`);
             } finally {
-                if (!feedbackModal.classList.contains('hidden')) {
-                    saveFeedbackBtn.disabled = false;
-                    saveFeedbackBtn.textContent = 'Salvar';
-                    validateFeedbackForm(); 
-                }
+                // Re-ativar o botão independentemente do resultado
+                saveFeedbackBtn.disabled = false;
+                saveFeedbackBtn.textContent = 'Salvar';
             }
         }
 
-        // *** FUNÇÃO DE ATUALIZAÇÃO (updateSampleData) ***
-        // Esta função está CORRETA e já lida com o 'new Date()'
+        // *** FUNÇÃO DE ATUALIZAÇÃO CORRIGIDA USANDO TRANSAÇÃO ***
         async function updateSampleData(sampleId, updates) {
             if (!currentSellerDocRef) {
                 console.error("Referência do vendedor não definida. Abortando atualização.");
-                throw new Error("Referência do vendedor não definida. Tente recarregar a página.");
+                showAlert("Erro: Não foi possível encontrar a referência do vendedor. Tente recarregar a página.");
+                return Promise.reject(new Error("Referência do vendedor não definida.")); // Rejeitar a promessa
             }
 
+            // *** CORREÇÃO: Garantir que lastUpdate é um Timestamp do Firestore ***
+            // Se updates.lastUpdate for um Date (de new Date()), converte-o.
+            const updatesWithTimestamp = {
+                ...updates,
+                lastUpdate: updates.lastUpdate instanceof Date 
+                    ? Timestamp.fromDate(updates.lastUpdate) 
+                    : updates.lastUpdate // Assume que já é um Timestamp se não for Date
+            };
+
             try {
+                // Iniciar a transação
                 await runTransaction(db, async (transaction) => {
+                    // 1. Ler o documento do vendedor DENTRO da transação
                     const sellerDoc = await transaction.get(currentSellerDocRef);
                     if (!sellerDoc.exists()) {
                         throw new Error("Documento do vendedor não existe!");
                     }
 
+                    // 2. Obter a matriz de amostras ATUAL do banco de dados
                     const currentSamples = sellerDoc.data().amostras || [];
+                    
+                    // 3. Encontrar o índice da amostra a ser atualizada
                     const sampleIndex = currentSamples.findIndex(s => s.id === sampleId);
                     
                     if (sampleIndex === -1) {
-                         throw new Error(`Amostra ${sampleId} não encontrada no banco de dados. Os seus dados podem estar dessincronizados.`);
+                         throw new Error(`Amostra ${sampleId} não encontrada. Os seus dados podem estar dessincronizados.`);
                     }
 
-                    // Esta lógica converte 'new Date()' para um Timestamp do Firestore,
-                    // o que é suportado dentro de arrays.
-                    const updatesWithTimestamp = {
-                        ...updates,
-                        lastUpdate: updates.lastUpdate instanceof Date 
-                            ? Timestamp.fromDate(updates.lastUpdate) 
-                            : updates.lastUpdate 
-                    };
-
+                    // 4. Criar a NOVA matriz de amostras
                     const updatedSamplesArray = [...currentSamples];
-                    updatedSamplesArray[sampleIndex] = { ...updatedSamplesArray[sampleIndex], ...updatesWithTimestamp };
+                    updatedSamplesArray[sampleIndex] = { ...updatedSamplesArray[sampleIndex], ...updatesWithTimestamp }; // Usar updates com timestamp corrigido
 
+                    // 5. Atualizar o documento com a nova matriz DENTRO da transação
                     transaction.update(currentSellerDocRef, { amostras: updatedSamplesArray });
                 });
 
                 console.log(`Transação bem-sucedida para a amostra ${sampleId}.`);
+                return Promise.resolve(); // Resolver a promessa em sucesso
 
             } catch (error) {
                 console.error("Falha na transação ao atualizar a amostra:", error);
+                
+                // Re-ativar o botão de exclusão se a atualização falhada foi uma exclusão
                  const deleteButton = document.querySelector(`.delete-btn[data-sample-id='${sampleId}']`);
                  if(deleteButton) deleteButton.disabled = false;
-                throw error; // Re-lançar o erro
+                 
+                // Rejeitar a promessa para que saveFeedback() possa tratar o erro
+                return Promise.reject(error); 
             }
         }
 
@@ -949,18 +954,25 @@
             if (sellerNotifications.length === 0) {
                  sellerNotificationsList.innerHTML = '<p class="text-gray-500">Nenhuma resposta recebida.</p>';
             } else {
+                 // Sort again just in case (though listener should keep it sorted)
                  sellerNotifications.sort((a, b) => (b.timestamp?.toDate() ?? 0) - (a.timestamp?.toDate() ?? 0));
 
                  sellerNotifications.forEach(notif => {
                      const itemDiv = document.createElement('div');
+
+                     // Check if this notification has a reply from the seller stored within it
                      const hasSellerReply = notif.sellerReplyMessage && notif.sellerReplyMessage.trim() !== '';
+
+                     // Generate Reply button HTML (changes text if already replied)
                      const replyButtonHtml = `<button class="seller-reply-btn bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-xs font-semibold ml-2" data-notif-id="${notif.id}">
                                                   ${hasSellerReply ? 'Ver/Responder' : 'Responder'}
                                              </button>`;
+                    // Generate Mark as Read button HTML (or "Lida" span if already read)
                      const readButtonHtml = !notif.read
                          ? `<button class="mark-as-read-btn bg-gray-200 text-gray-700 hover:bg-gray-300 px-2 py-1 rounded text-xs font-semibold ml-2" data-notif-id="${notif.id}">✓ Marcar como Lida</button>`
                          : `<span class="text-green-500 text-xs font-semibold ml-2">✓ Lida</span>`;
 
+                     // Apply styling for unread items
                      itemDiv.className = `seller-notification-item text-sm ${!notif.read ? 'font-semibold bg-blue-50 p-2 rounded' : 'text-gray-600 p-2'}`;
                      itemDiv.innerHTML = `
                          <p class="mb-1">
@@ -968,13 +980,16 @@
                              <strong>${notif.produto}</strong> (Pedido: ${notif.pedido}):
                          </p>
                          <div class="manager-reply">${notif.replyMessage}</div>
+
                          ${hasSellerReply ? `
                          <div class="seller-reply">
                               <p><strong>Você respondeu:</strong> ${notif.sellerReplyMessage}</p>
                          </div>` : ''}
+
                          ${notif.originalObservation ? `<blockquote>Observação Original: "${notif.originalObservation}"</blockquote>` : ''}
+
                          <div class="flex justify-between items-center mt-2">
-                              <p class="text-xs text-gray-400">${notif.timestamp?.toDate() ? notif.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p>
+                              <p class="text-xs text-gray-400">${notif.timestamp?.toDate() ? notif.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p> {/* Added null check */}
                               <div class="flex gap-2">
                                    ${replyButtonHtml}
                                    ${readButtonHtml}
@@ -984,6 +999,7 @@
                      sellerNotificationsList.appendChild(itemDiv);
                  });
 
+                 // Add event listeners for buttons inside the modal list
                  sellerNotificationsList.querySelectorAll('.mark-as-read-btn').forEach(btn => {
                      btn.addEventListener('click', markNotificationAsRead);
                  });
@@ -991,8 +1007,8 @@
                      btn.addEventListener('click', openSellerReplyModal);
                  });
             }
-            sellerNotificationsModal.classList.remove('hidden');
-             notificationPrompt.classList.add('hidden');
+            sellerNotificationsModal.classList.remove('hidden'); // Show modal
+             notificationPrompt.classList.add('hidden'); // Hide prompt once modal is opened
         }
 
         // Hide the seller notification modal
@@ -1008,14 +1024,16 @@
             const notifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", notifId);
             try {
                 await updateDoc(notifRef, { read: true });
+                // Listener will update UI, but manually update local state and re-render modal for instant feedback
                  const notifIndex = sellerNotifications.findIndex(n => n.id === notifId);
                  if (notifIndex > -1) {
                       sellerNotifications[notifIndex].read = true;
                  }
-                 showSellerNotifications(); 
-                 updateSellerNotificationBadge(); 
+                 showSellerNotifications(); // Re-render modal list
+                 updateSellerNotificationBadge(); // Update badge count
             } catch (err) {
                 console.error("Erro ao marcar como lida:", err);
+                // Re-enable button on error
                 e.target.disabled = false;
                 e.target.textContent = '✓ Marcar como Lida';
             }
@@ -1027,14 +1045,15 @@
             const notification = sellerNotifications.find(n => n.id === notifId);
             if (!notification) return;
 
-            currentNotificationForReply = notification; 
+            currentNotificationForReply = notification; // Store context
 
+            // Populate the reply modal
             sellerReplyContext.textContent = `Em resposta a ${notification.managerName} (Ref. ${notification.produto}):`;
             sellerReplyOriginalMsg.textContent = `"${notification.replyMessage}"`;
-            sellerReplyMessageInput.value = notification.sellerReplyMessage || ''; 
+            sellerReplyMessageInput.value = notification.sellerReplyMessage || ''; // Pre-fill if editing previous reply
 
-            sellerNotificationsModal.classList.add('hidden'); 
-            sellerReplyModal.classList.remove('hidden'); 
+            sellerNotificationsModal.classList.add('hidden'); // Hide the notification list
+            sellerReplyModal.classList.remove('hidden'); // Show the reply modal
         }
 
         // Send the seller's reply TO THE MANAGER
@@ -1043,7 +1062,7 @@
 
             const replyMessage = sellerReplyMessageInput.value.trim();
             if (!replyMessage) {
-                showAlert("Por favor, escreva a sua resposta."); 
+                showAlert("Por favor, escreva a sua resposta."); // Use custom alert
                 return;
             }
 
@@ -1059,8 +1078,8 @@
                     originalManagerName: currentNotificationForReply.managerName,
                     pedido: currentNotificationForReply.pedido,
                     produto: currentNotificationForReply.produto,
-                    timestamp: serverTimestamp(), // serverTimestamp() é OK aqui (não está num array)
-                    readByManager: false 
+                    timestamp: serverTimestamp(), 
+                    readByManager: false // Manager hasn't read this yet
                 };
                 const managerRepliesRef = collection(db, "sessoes", currentSessionId, "respostasVendedor");
                 await addDoc(managerRepliesRef, replyDataForManager);
@@ -1068,19 +1087,20 @@
                 // 2. Update the original notification ("notificacoesVendedor") to include the seller's reply and mark as read
                 const originalNotifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", currentNotificationForReply.id);
                 await updateDoc(originalNotifRef, {
-                    sellerReplyMessage: replyMessage, 
-                    read: true 
+                    sellerReplyMessage: replyMessage, // Add seller's reply content
+                    read: true // Mark original notification as read (since seller replied)
                 });
 
+                 // Update local state immediately for UI refresh
                  const notifIndex = sellerNotifications.findIndex(n => n.id === currentNotificationForReply.id);
                  if (notifIndex > -1) {
                       sellerNotifications[notifIndex].read = true;
                       sellerNotifications[notifIndex].sellerReplyMessage = replyMessage;
                  }
-                 updateSellerNotificationBadge(); 
+                 updateSellerNotificationBadge(); // Update badge count
 
-                 sellerReplyModal.classList.add('hidden'); 
-                 showSellerNotifications(); 
+                 sellerReplyModal.classList.add('hidden'); // Close reply modal
+                 showSellerNotifications(); // Re-open the notification list to show the updated thread
 
             } catch (error) {
                 console.error("Erro ao enviar resposta ao gestor:", error);
@@ -1088,7 +1108,7 @@
             } finally {
                 sendSellerReplyBtn.disabled = false;
                 sendSellerReplyBtn.textContent = 'Enviar Resposta';
-                currentNotificationForReply = null; 
+                currentNotificationForReply = null; // Clear context
             }
         }
 
@@ -1099,22 +1119,24 @@
                 console.warn("Este navegador não suporta notificações desktop");
                 return;
             }
+            // Request permission only if not already denied
             if (Notification.permission !== 'denied') {
                  Notification.requestPermission().then(permission => {
                      console.log("Permissão de notificação:", permission);
+                     // Optionally update UI based on new permission state
                  });
             }
         }
 
         function showBrowserNotification(title, body) {
             if (Notification.permission === 'granted') {
-                 if (document.visibilityState === 'visible') { 
+                 if (document.visibilityState === 'visible') { // Don't show if tab is active
                       console.log("Tab is active, skipping browser notification.");
                       return;
                  }
                 const notification = new Notification(title, {
                     body: body,
-                    icon: 'https://img.icons8.com/fluency/96/send-letter.png' 
+                    icon: 'https://img.icons8.com/fluency/96/send-letter.png' // Example icon
                 });
             }
         }
@@ -1130,11 +1152,13 @@
                  loadingMessage.textContent = 'A verificar sessão guardada...';
                  accessView.classList.add('hidden');
                  loadingState.classList.remove('hidden');
-                 const loginSuccess = await attemptLogin(savedSessionId, savedSellerName, savedAccessCode, true); 
+                 const loginSuccess = await attemptLogin(savedSessionId, savedSellerName, savedAccessCode, true); // Try auto-login
                  if (!loginSuccess) {
                      console.log("Auto-login falhou. A mostrar ecrã de login.");
+                     // attemptLogin handles showing login view on auto-login failure
                  }
             } else {
+                 // No saved credentials, show login view
                  accessView.classList.remove('hidden');
                  loadingState.classList.add('hidden');
             }
@@ -1143,8 +1167,8 @@
         // --- Initial Anonymous Sign-in and Local Storage Check ---
         (async () => {
              try {
-                 await signInAnonymously(auth); 
-                 await checkLocalStorage(); 
+                 await signInAnonymously(auth); // Ensure user is signed in
+                 await checkLocalStorage(); // Check for saved session
              } catch (error) {
                  console.error("Firebase Auth Error:", error);
                  accessError.textContent = "Não foi possível conectar ao serviço.";
@@ -1156,6 +1180,7 @@
     </script>
 </body>
 </html>
+
 
 
 
