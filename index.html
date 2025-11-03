@@ -993,6 +993,12 @@
                  sellerNotifications.forEach(notif => {
                      const itemDiv = document.createElement('div');
 
+                     // *** INÍCIO DA ALTERAÇÃO: Buscar dados da amostra original ***
+                     const originalSample = allSellerSamples.find(s => s.pedido === notif.pedido && s.produto === notif.produto);
+                     const razaoSocial = originalSample?.razaoSocial || 'Cliente não encontrado';
+                     const descricao = originalSample?.descricao || ''; // Descrição pode ser vazia
+                     // *** FIM DA ALTERAÇÃO ***
+
                      // Check if this notification has a reply from the seller stored within it
                      const hasSellerReply = notif.sellerReplyMessage && notif.sellerReplyMessage.trim() !== '';
 
@@ -1007,11 +1013,21 @@
 
                      // Apply styling for unread items
                      itemDiv.className = `seller-notification-item text-sm ${!notif.read ? 'font-semibold bg-blue-50 p-2 rounded' : 'text-gray-600 p-2'}`;
+                     
+                     // *** HTML ATUALIZADO ***
                      itemDiv.innerHTML = `
                          <p class="mb-1">
-                             <span class="font-bold">${notif.managerName}</span> respondeu sobre
-                             <strong>${notif.produto}</strong> (Pedido: ${notif.pedido}):
+                             <span class="font-bold">${notif.managerName}</span> respondeu sobre:
                          </p>
+
+                         <!-- NOVO BLOCO DE CONTEXTO -->
+                         <div class="mb-2 p-2 bg-gray-100 rounded border border-gray-200">
+                             <p class="font-semibold text-gray-800">${notif.produto} ${descricao ? `- ${descricao}` : ''}</p>
+                             <p class="text-xs text-gray-600">Cliente: ${razaoSocial} (Pedido: ${notif.pedido})</p>
+                         </div>
+                         <!-- FIM DO BLOCO -->
+
+                         <p class="text-sm mb-1 ${!notif.read ? 'text-gray-800' : 'text-gray-600'}">Mensagem do Gestor:</p>
                          <div class="manager-reply">${notif.replyMessage}</div>
 
                          ${hasSellerReply ? `
@@ -1022,7 +1038,7 @@
                          ${notif.originalObservation ? `<blockquote>Observação Original: "${notif.originalObservation}"</blockquote>` : ''}
 
                          <div class="flex justify-between items-center mt-2">
-                              <p class="text-xs text-gray-400">${notif.timestamp?.toDate() ? notif.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p> {/* Added null check */}
+                              <p class="text-xs text-gray-400">${notif.timestamp?.toDate() ? notif.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p>
                               <div class="flex gap-2">
                                    ${replyButtonHtml}
                                    ${readButtonHtml}
@@ -1079,9 +1095,14 @@
             if (!notification) return;
 
             currentNotificationForReply = notification; // Store context
+            
+            // *** ATUALIZAÇÃO: Buscar dados da amostra para o modal de resposta ***
+             const originalSample = allSellerSamples.find(s => s.pedido === notification.pedido && s.produto === notification.produto);
+             const razaoSocial = originalSample?.razaoSocial || 'Cliente não encontrado';
+             const descricao = originalSample?.descricao || '';
 
             // Populate the reply modal
-            sellerReplyContext.textContent = `Em resposta a ${notification.managerName} (Ref. ${notification.produto}):`;
+            sellerReplyContext.textContent = `Em resposta a ${notification.managerName} (Ref. ${notification.produto} - ${razaoSocial}):`;
             sellerReplyOriginalMsg.textContent = `"${notification.replyMessage}"`;
             sellerReplyMessageInput.value = notification.sellerReplyMessage || ''; // Pre-fill if editing previous reply
 
@@ -1213,6 +1234,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
