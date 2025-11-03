@@ -680,8 +680,8 @@
                             <button class="signal-manager-btn bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-sm hover:bg-blue-700" data-order-id="${order.pedido}">Sinalizar Gestor</button>
                         </div>` : ''}
                         ${!isPendingSection ? `
-                        <div class="p-3 border-t text-xs text-gray-500 bg-gray-50 text-center">
-                             Este pedido já foi sinalizado para o gestor.
+                        <div class="p-4 border-t text-right bg-gray-50">
+                            <button class="re-signal-manager-btn bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg text-sm hover:bg-gray-600" data-order-id="${order.pedido}">Reenviar Notificação</button>
                         </div>` : ''}
                     </div>
                 `;
@@ -722,7 +722,6 @@
                         observation: '', 
                         finalizedByVendor: false, 
                         editedAfterCompletion: false, 
-                        // *** CORREÇÃO AQUI ***
                         lastUpdate: Timestamp.fromDate(new Date()) 
                     });
                 });
@@ -730,21 +729,22 @@
               container.querySelectorAll('.signal-manager-btn').forEach(btn => {
                   btn.addEventListener('click', async (e) => {
                       const orderId = e.currentTarget.dataset.orderId;
-                      e.currentTarget.disabled = true;
-                      e.currentTarget.textContent = 'A sinalizar...';
+                      const button = e.currentTarget; // Get reference to the button
+                      button.disabled = true;
+                      button.textContent = 'A sinalizar...';
                       
                       try {
+                        // *** CORREÇÃO: A transação agora lê o documento primeiro ***
                         await runTransaction(db, async (transaction) => {
                             const sellerDoc = await transaction.get(currentSellerDocRef);
                             if (!sellerDoc.exists()) {
-                                throw "Documento do vendedor não existe!";
+                                throw new Error("Documento do vendedor não existe!");
                             }
                             const currentSamples = sellerDoc.data().amostras || [];
                             
                             // Mapear e atualizar apenas as amostras relevantes
                             const updatedSamplesArray = currentSamples.map(sample => {
                                 if (sample.pedido === orderId && !sample.isPending) {
-                                    // *** CORREÇÃO AQUI ***
                                     return { ...sample, finalizedByVendor: true, lastUpdate: Timestamp.fromDate(new Date()) };
                                 }
                                 return sample;
@@ -754,7 +754,7 @@
                             transaction.update(currentSellerDocRef, { amostras: updatedSamplesArray });
                         });
 
-                        e.currentTarget.textContent = 'Sinalizado!'; // Manter feedback de sucesso
+                        button.textContent = 'Sinalizado!'; // Manter feedback de sucesso
                         console.log(`Pedido ${orderId} marcado como finalizado pelo vendedor (via transação).`);
 
                         // Enviar notificação ao gestor (fora da transação)
@@ -773,11 +773,49 @@
                           console.error("Erro ao sinalizar gestor (transação falhou):", error);
                           showAlert("Erro ao sinalizar. Tente novamente.");
                           // Re-ativar o botão em caso de erro
-                          e.currentTarget.disabled = false;
-                          e.currentTarget.textContent = 'Sinalizar Gestor';
+                          button.disabled = false;
+                          button.textContent = 'Sinalizar Gestor';
                       }
                   });
               });
+
+             // *** NOVO: Listener para o botão de Reenviar Notificação ***
+             container.querySelectorAll('.re-signal-manager-btn').forEach(btn => {
+                 btn.addEventListener('click', async (e) => {
+                     const orderId = e.currentTarget.dataset.orderId;
+                     const button = e.currentTarget;
+                     
+                     button.disabled = true;
+                     button.textContent = 'Reenviando...';
+
+                     try {
+                         // Apenas envia a notificação, não precisa de transação
+                         const sellerName = currentSellerOriginalName;
+                         const message = `<strong>${sellerName}</strong> reenviou a notificação do pedido: <strong>${orderId}</strong>.`;
+                         const notifId = sanitizeForFirebaseId(`${sellerName}-${orderId}-reenvio-${Date.now()}`);
+                         const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
+                         
+                         await setDoc(notifRef, {
+                             message,
+                             color: 'blue', // Cor azul para reenvio
+                             timestamp: serverTimestamp(),
+                             triggerPopup: true // Acionar popup para o gestor
+                         });
+
+                         button.textContent = 'Notificação Reenviada!';
+                         setTimeout(() => {
+                             button.disabled = false;
+                             button.textContent = 'Reenviar Notificação';
+                         }, 3000); // Resetar o botão após 3s
+
+                     } catch (error) {
+                         console.error("Erro ao reenviar notificação:", error);
+                         showAlert("Erro ao reenviar a notificação. Tente novamente.");
+                         button.disabled = false;
+                         button.textContent = 'Reenviar Notificação';
+                     }
+                 });
+             });
         }
 
         // --- Feedback Modal Functions ---
@@ -814,7 +852,6 @@
         async function saveFeedback() {
             if (saveFeedbackBtn.disabled) return;
             
-            // *** CORREÇÃO: Feedback de "A guardar..." ***
             saveFeedbackBtn.disabled = true;
             saveFeedbackBtn.textContent = 'A guardar...';
 
@@ -832,11 +869,9 @@
                 feedback: newFeedback,
                 observation: newObservation,
                 editedAfterCompletion: wasEdited, // Store edit status
-                // *** CORREÇÃO AQUI ***
                 lastUpdate: Timestamp.fromDate(new Date()) // Use Firestore Timestamp
             };
 
-            // *** CORREÇÃO: Chamar updateSampleData e tratar erros ***
             try {
                 await updateSampleData(currentSample.id, updates); // Update Firestore
                 
@@ -880,13 +915,11 @@
                 return Promise.reject(new Error("Referência do vendedor não definida.")); // Rejeitar a promessa
             }
 
-            // *** CORREÇÃO: Garantir que lastUpdate é um Timestamp do Firestore ***
-            // Se updates.lastUpdate for um Date (de new Date()), converte-o.
             const updatesWithTimestamp = {
                 ...updates,
                 lastUpdate: updates.lastUpdate instanceof Date 
                     ? Timestamp.fromDate(updates.lastUpdate) 
-                    : updates.lastUpdate // Assume que já é um Timestamp se não for Date
+                    : updates.lastUpdate 
             };
 
             try {
@@ -1180,6 +1213,7 @@
     </script>
 </body>
 </html>
+
 
 
 
