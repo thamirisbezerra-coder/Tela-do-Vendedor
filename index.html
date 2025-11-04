@@ -29,12 +29,12 @@
         .seller-notification-item { border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem; margin-bottom: 0.75rem; }
         .seller-notification-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .seller-notification-item blockquote {
-            border-left: 3px solid #d1d5db;
+            border-left: 3px solid #d1d5db; /* gray-300 */
             padding-left: 0.75rem;
             margin-top: 0.25rem;
             margin-bottom: 0.5rem;
             font-style: italic;
-            color: #4b5563;
+            color: #4b5563; /* gray-600 */
         }
         .manager-reply, .seller-reply {
             margin-top: 0.5rem;
@@ -42,48 +42,24 @@
             border-radius: 0.25rem;
         }
         .manager-reply {
-            background-color: #f3f4f6;
-            border-left: 3px solid #9ca3af;
+            background-color: #f3f4f6; /* gray-100 */
+            border-left: 3px solid #9ca3af; /* gray-400 */
         }
          .seller-reply {
-            background-color: #f0f9ff;
-            border-left: 3px solid #60a5fa;
-            margin-left: 1rem;
+            background-color: #f0f9ff; /* blue-50 */
+            border-left: 3px solid #60a5fa; /* blue-400 */
+            margin-left: 1rem; /* Indent seller reply */
         }
         .status-dot {
             display: inline-block;
-            width: 0.6rem;
+            width: 0.6rem; 
             height: 0.6rem;
             border-radius: 50%;
-            margin-right: 0.5rem;
-            vertical-align: middle;
+            margin-right: 0.5rem; 
+            vertical-align: middle; 
         }
-        .dot-yellow { background-color: #facc15; }
-        .dot-green { background-color: #4ade80; }
-
-        /* Estilo para botão de carregamento */
-        .btn-loading {
-            position: relative;
-            color: transparent !important;
-            pointer-events: none;
-        }
-        .btn-loading::after {
-            content: '';
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            margin-top: -10px;
-            margin-left: -10px;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #fff;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        .dot-yellow { background-color: #facc15; } /* yellow-400 */
+        .dot-green { background-color: #4ade80; } /* green-400 */
 
     </style>
 </head>
@@ -96,14 +72,13 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-20 w-20 text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                <h1 class="text-2xl font-bold text-gray-800">Olá, vendedor(a) Doremus! (v2)</h1>
-                <p class="text-gray-600 mt-2">Este é o seu painel de feedbacks de amostras.</p>
+                <h1 class="text-2xl font-bold text-gray-800">Olá, vendedor(a) Doremus!</h1>
+                <p class="text-gray-600 mt-2">Este é o seu painel de feedbacks de amostras (v2).</p>
             </div>
             <div class="space-y-4">
                 <div>
                     <label for="seller-name-input" class="block text-sm font-medium text-gray-700 mb-1 text-left">O seu Nome de Vendedor</label>
-                    <!-- CORREÇÃO: Removido o exemplo do placeholder -->
-                    <input type="text" id="seller-name-input" placeholder="Escreva seu nome" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3">
+                    <input type="text" id="seller-name-input" placeholder="Escreva seu nome (ex: JOAO SILVA)" class="w-full border-gray-300 rounded-lg shadow-sm py-2 px-3">
                 </div>
                 <div>
                     <label for="access-code-input" class="block text-sm font-medium text-gray-700 mb-1 text-left">Código de Acesso</label>
@@ -117,20 +92,19 @@
     </div>
 
     <!-- Loading State -->
-    <div id="loading-state" class="hidden flex flex-col items-center justify-center min-h-screen text-center p-4">
+    <div id="loading-state" class="hidden flex flex-col items-center justify-center min-h-screen text-center">
         <h1 id="loading-message" class="text-2xl font-bold text-gray-700">A carregar...</h1>
-        <p id="loading-submessage" class="text-gray-600 mt-2">A procurar a sessão ativa e os seus dados...</p>
     </div>
 
     <!-- Main Content -->
     <div id="main-content" class="hidden flex items-center justify-center min-h-screen p-4">
         <div class="w-full max-w-5xl">
              <header class="mb-8 text-center relative flex justify-between items-start">
-                 <div>
+                 <div> 
                      <h1 id="welcome-title" class="text-3xl font-bold text-gray-800 text-left">Olá!</h1>
-                     <p class="text-gray-600 mt-2 text-left">Este é o seu painel para gestão de feedbacks de amostras.</p>
+                     <p id="session-info" class="text-gray-600 mt-2 text-left text-sm">Sessão: ...</p>
                  </div>
-                 <div class="flex items-center gap-4">
+                 <div class="flex items-center gap-4"> 
                      <div class="relative flex flex-col items-center">
                          <button id="seller-notification-btn" class="relative text-gray-500 hover:text-gray-700" title="Ver respostas do gestor">
                              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
@@ -145,13 +119,13 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-200">
-                    <h3 class="font-bold text-lg mb-2 text-gray-800">Como Funciona?</h3>
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Como Funciona? (v2)</h3>
                     <ol class="list-decimal list-inside text-sm text-gray-600 space-y-1">
-                        <li>Expanda um pedido para ver as amostras (indicadas por <span class="status-dot dot-yellow"></span> Pendente ou <span class="status-dot dot-green"></span> Respondido).</li>
-                        <li>Clique em <strong>"Atualizar"</strong> na amostra desejada (ou "Editar" se já respondeu).</li>
-                        <li>Selecione uma opção de feedback e escreva a observação.</li>
-                        <li>Quando todas as amostras de um pedido forem respondidas (todas <span class="status-dot dot-green"></span>), clique em <strong>"Sinalizar Gestor"</strong> para o notificar.</li>
-                        <li>Verifique as respostas do gestor clicando no <strong class="text-blue-600">sino 🔔</strong>.</li>
+                        <li>Expanda um pedido para ver as amostras.</li>
+                        <li>Clique em <strong>"Atualizar"</strong> (ou "Editar" se já respondeu).</li>
+                        <li>Selecione uma opção e escreva a observação.</li>
+                        <li>Quando todas as amostras de um pedido forem respondidas (todas <span class="status-dot dot-green"></span>), clique em <strong>"Sinalizar Gestor"</strong>.</li>
+                        <li>Verifique as respostas do gestor no <strong class="text-blue-600">sino 🔔</strong>. Pode clicar em "Ir para Amostra" na notificação.</li>
                     </ol>
                 </div>
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
@@ -178,7 +152,7 @@
             <div id="no-data-message" class="hidden text-center bg-white p-8 rounded-2xl shadow-sm border">
                  <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
                  <h2 class="mt-4 text-2xl font-bold text-gray-800">Nenhuma amostra encontrada.</h2>
-                 <p class="text-gray-600 mt-2">Verifique se os dados de acesso estão corretos ou se a sessão está ativa.</p>
+                 <p class="text-gray-600 mt-2">Verifique se os dados de acesso estão corretos ou contate o gestor.</p>
             </div>
         </div>
     </div>
@@ -191,6 +165,7 @@
             <p class="font-semibold text-gray-800 mb-6 flex-shrink-0" id="modal-sample-info"></p>
 
             <div id="feedback-options" class="grid grid-cols-2 gap-3 mb-6 overflow-y-auto">
+                <!-- Feedback buttons populated by JS -->
             </div>
 
             <div class="flex-shrink-0">
@@ -214,6 +189,7 @@
              </div>
              <div id="seller-notifications-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                   <p class="text-gray-500">Nenhuma resposta recebida.</p>
+                  <!-- Notifications populated by JS -->
              </div>
               <div class="mt-6 flex justify-end">
                    <button id="close-seller-notifications-btn-bottom" class="bg-blue-600 text-white font-bold py-2 px-5 rounded-lg">Fechar</button>
@@ -258,14 +234,13 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { 
             getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, 
-            serverTimestamp, query, where, writeBatch, limit, addDoc, Timestamp, runTransaction, 
-            getDocs
+            serverTimestamp, query, where, writeBatch, limit, addDoc, Timestamp,
+            runTransaction, collectionGroup, getDocs
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // Configuração do Firebase
         const firebaseConfig = {
-            // CORREÇÃO: Adicionado o '8' que faltava
             apiKey: "AIzaSyAF_TE28Tbp2nakBGTva1yEEbBCqWvRdJQ",
             authDomain: "feedback-vendedores.firebaseapp.com",
             projectId: "feedback-vendedores",
@@ -279,27 +254,41 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Opções de Feedback
+        // Feedback choices 
         const FEEDBACK_CHOICES = [
-            'A - COM PEDIDO', 'A - APROVADA SEM PEDIDO', 'P - AMOSTRA NÃO TESTADA', 'P - EM ANÁLISE', 
-            'P - AMOSTRA SEM FEEDBACK', 'R - APRESENTAÇÃO PRÓ ATIVA', 'R - CALIBRE', 'R - EXTRAVIADA', 
-            'R - FORA DA ESPECIFICAÇÃO DO CLIENTE', 'R - FORA DO PERFIL DO CLIENTE', 
-            'R - FRACA / ESTOURANDO / COM CHUVEIRO', 'R - PRODUTO DESCONTINUADO', 'R - QUANTIDADE INSUFICIENTE', 
-            'R - REPRESENTAÇÃO / DISTRIBUIDOR', 'R - SEM RETORNO DO CLIENTE', 'E - INNOVATION / EVENTOS', 
-            'E - EVENTO', 'R - EXPORTACAO'
+            'A - COM PEDIDO',
+            'A - APROVADA SEM PEDIDO',
+            'P - AMOSTRA NÃO TESTADA',
+            'P - EM ANÁLISE',
+            'P - AMOSTRA SEM FEEDBACK',
+            'R - APRESENTAÇÃO PRÓ ATIVA',
+            'R - CALIBRE',
+            'R - EXTRAVIADA',
+            'R - FORA DA ESPECIFICAÇÃO DO CLIENTE',
+            'R - FORA DO PERFIL DO CLIENTE',
+            'R - FRACA / ESTOURANDO / COM CHUVEIRO',
+            'R - PRODUTO DESCONTINUADO',
+            'R - QUANTIDADE INSUFICIENTE',
+            'R - REPRESENTAÇÃO / DISTRIBUIDOR',
+            'R - SEM RETORNO DO CLIENTE',
+            'E - INNOVATION / EVENTOS',
+            'E - EVENTO',
+            'R - EXPORTACAO'
         ];
 
-        // --- Elementos DOM ---
+        // --- DOM Elements ---
         const accessView = document.getElementById('access-view');
         const loadingState = document.getElementById('loading-state');
         const loadingMessage = document.getElementById('loading-message');
-        const loadingSubmessage = document.getElementById('loading-submessage');
         const mainContent = document.getElementById('main-content');
         const loadDataBtn = document.getElementById('load-data-btn');
         const logoutBtn = document.getElementById('logout-btn');
         const accessError = document.getElementById('access-error');
         const noDataMessage = document.getElementById('no-data-message');
         const welcomeTitle = document.getElementById('welcome-title');
+        const sessionInfo = document.getElementById('session-info'); // v2
+
+        // Seller Notification Elements
         const sellerNotificationBtn = document.getElementById('seller-notification-btn');
         const sellerNotificationCount = document.getElementById('seller-notification-count');
         const sellerNotificationsModal = document.getElementById('seller-notifications-modal');
@@ -307,51 +296,55 @@
         const closeSellerNotificationsBtn = document.getElementById('close-seller-notifications-btn');
         const closeSellerNotificationsBtnBottom = document.getElementById('close-seller-notifications-btn-bottom');
         const notificationPrompt = document.getElementById('notification-prompt');
+
+        // Seller Reply Modal Elements
         const sellerReplyModal = document.getElementById('seller-reply-modal');
         const sellerReplyContext = document.getElementById('seller-reply-context');
         const sellerReplyOriginalMsg = document.getElementById('seller-reply-original-msg');
         const sellerReplyMessageInput = document.getElementById('seller-reply-message-input');
         const cancelSellerReplyBtn = document.getElementById('cancel-seller-reply-btn');
         const sendSellerReplyBtn = document.getElementById('send-seller-reply-btn');
-        let currentNotificationForReply = null;
+        let currentNotificationForReply = null; 
+
+        // Feedback Modal Elements
         const feedbackModal = document.getElementById('feedback-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalSampleInfo = document.getElementById('modal-sample-info');
         const feedbackOptionsContainer = document.getElementById('feedback-options');
         const observationInput = document.getElementById('observation');
-        const cancelFeedbackModalBtn = document.getElementById('cancel-modal-btn');
-        const saveFeedbackBtn = document.getElementById('save-button');
+        const cancelFeedbackModalBtn = document.getElementById('cancel-modal-btn'); 
+        const saveFeedbackBtn = document.getElementById('save-button'); 
+
+        // Custom Alert Elements
         const customAlert = document.getElementById('custom-alert');
         const customAlertTitle = document.getElementById('custom-alert-title');
         const customAlertMessage = document.getElementById('custom-alert-message');
         const customAlertOkBtn = document.getElementById('custom-alert-ok-btn');
 
-        // --- Variáveis de Estado ---
-        let currentSample = null;
-        let selectedFeedback = null;
-        let currentSellerDocRef = null; // Ref para /sessoes/{sid}/vendedores/{vid}
-        let allSellerSamples = [];
-        let unsubscribeSamples = null;
-        let sellerNotificationListenerUnsubscribe = null;
-        let currentSessionId = null;
-        let currentSellerId = null; // Nome higienizado do vendedor
-        let currentSellerOriginalName = null;
-        let sellerNotifications = [];
+        // --- State Variables ---
+        let currentSample = null; 
+        let selectedFeedback = null; 
+        let currentSellerDocRef = null; 
+        let allSellerSamples = []; // Local cache of seller's samples
+        let dataListenersUnsubscribe = []; // v2: Array of listeners
+        let sellerNotificationListenerUnsubscribe = null; 
+        let currentSessionId = null; 
+        let currentSellerOriginalName = null; 
+        let sellerNotifications = []; 
+        let currentActiveSessionName = "Sessão"; // v2
 
-        // --- Funções Utilitárias ---
+        // --- Utility Functions ---
         const normalizeText = (text = '') => text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() : '';
         const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
 
-        // Alerta customizado
         function showAlert(message, title = "Erro na Operação", color = "text-red-600") {
             customAlertTitle.textContent = title;
-            customAlertMessage.innerHTML = message; // Usar innerHTML para o <br>
+            customAlertMessage.innerHTML = message; 
             customAlertTitle.className = `text-xl font-bold mb-4 ${color}`;
             customAlert.classList.remove('hidden');
         }
         customAlertOkBtn.addEventListener('click', () => customAlert.classList.add('hidden'));
-
-        // Tratamento de erros do Firestore
+        
         function handleFirestoreError(error, operationContext) {
             console.error(`Erro em "${operationContext}":`, error);
             let message = `Não foi possível completar a operação: ${operationContext}.<br><br>Erro: ${error.message}`;
@@ -359,109 +352,109 @@
             let color = "text-red-600";
 
             if (error.code === 'resource-exhausted' || (error.message && error.message.includes('Quota exceeded'))) {
-                message = "O limite diário de uso do banco de dados foi atingido (Quota Exceeded). Novas alterações não serão salvas hoje.<br><br>Por favor, tente novamente amanhã.";
+                message = "O limite diário de uso do banco de dados foi atingido (Quota Exceeded). Novas alterações não serão salvas hoje.<br><br>Por favor, tente novamente amanhã ou contate o suporte.";
                 title = "Limite da Plataforma Atingido";
                 color = "text-amber-600";
+            } else if (error.code === 'permission-denied') {
+                message = "Permissão negada. Verifique as regras de segurança.";
             }
             showAlert(message, title, color);
         }
 
-        // --- Autenticação e Carregamento de Dados (v2) ---
+        // --- Authentication & Data Loading (v2) ---
         
-        // Busca a sessão ativa
-        async function getActiveSessionId() {
-            try {
+        async function getActiveSession() {
+             try {
                 const activeSessionRef = doc(db, "configuracoes", "sessaoAtiva");
                 const docSnap = await getDoc(activeSessionRef);
                 if (docSnap.exists() && docSnap.data().current) {
-                    return docSnap.data().current;
+                    const sessionDocId = docSnap.data().current;
+                    // Busca o nome da sessão (se existir)
+                    const sessionConfigRef = doc(db, "sessoes", sessionDocId, "configuracoes", "geral");
+                    const configSnap = await getDoc(sessionConfigRef);
+                    const sessionName = configSnap.exists() ? configSnap.data().nome : sessionDocId;
+                    
+                    return { id: sessionDocId, name: sessionName };
                 } else {
                     return null;
                 }
             } catch (error) {
-                console.error("Erro ao buscar sessão ativa:", error);
+                handleFirestoreError(error, "buscar sessão ativa");
                 return null;
             }
         }
-
-        // Tenta fazer login
+        
         async function attemptLogin(sellerName, accessCode, isAutoLogin = false) {
             if (!sellerName || !accessCode) {
                 if (!isAutoLogin) accessError.textContent = 'Nome e Código são obrigatórios.';
                 return false;
             }
 
-            loadingState.classList.remove('hidden');
-            loadingSubmessage.textContent = "A procurar sessão ativa...";
+            loadingMessage.textContent = 'A procurar sessão ativa...';
             accessView.classList.add('hidden');
+            loadingState.classList.remove('hidden');
 
-            // 1. Encontra a sessão ativa (ex: sessao_v2_...)
-            currentSessionId = await getActiveSessionId();
-            if (!currentSessionId) {
+            const session = await getActiveSession();
+            if (!session) {
+                accessError.textContent = 'Nenhuma sessão de feedback ativa encontrada. Contate o gestor.';
                 loadingState.classList.add('hidden');
                 accessView.classList.remove('hidden');
-                accessError.textContent = 'Nenhuma sessão de feedback ativa encontrada. Contate o gestor.';
                 return false;
             }
             
-            loadingSubmessage.textContent = `Sessão encontrada. A verificar credenciais...`;
-
-            // 2. Prepara os IDs do vendedor
-            currentSellerId = sanitizeForFirebaseId(sellerName);
-            currentSellerOriginalName = sellerName;
+            currentSessionId = session.id;
+            currentActiveSessionName = session.name;
+            sessionInfo.textContent = `Sessão: ${currentActiveSessionName}`;
+            
+            const sellerId = sanitizeForFirebaseId(sellerName); 
+            currentSellerOriginalName = sellerName; 
 
             try {
-                // 3. Tenta aceder ao documento do vendedor
-                const docRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
+                const docRef = doc(db, "sessoes", currentSessionId, "vendedores", sellerId);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists() && docSnap.data().accessCode === accessCode) {
-                    // Sucesso!
                     currentSellerDocRef = docRef;
-                    const sellerData = docSnap.data();
-                    welcomeTitle.textContent = `Olá, ${sellerData.originalName}!`;
-                    currentSellerOriginalName = sellerData.originalName;
+                    currentSellerOriginalName = docSnap.data().originalName; // Pega o nome com case correto
+                    welcomeTitle.textContent = `Olá, ${currentSellerOriginalName}!`; 
 
                     if (!isAutoLogin) {
-                        localStorage.setItem('sellerName_v2', currentSellerOriginalName);
-                        localStorage.setItem('sellerAccessCode_v2', accessCode);
+                        localStorage.setItem('sellerNameV2', currentSellerOriginalName); 
+                        localStorage.setItem('sellerAccessCodeV2', accessCode);
                     }
 
                     accessError.textContent = '';
-                    loadingMessage.textContent = 'A carregar as suas amostras...';
-                    loadingSubmessage.textContent = '';
+                    loadingState.textContent = 'A carregar as suas amostras...';
 
-                    requestNotificationPermission();
-                    startRealtimeListener(); // Ouve a sub-coleção 'amostras'
-                    listenForSellerNotifications(); // Ouve notificações
+                    requestNotificationPermission(); 
+                    startRealtimeListeners(); // v2: Plural
+                    listenForSellerNotifications(); 
                     return true;
                 } else {
-                    // Falha no login
                     if (isAutoLogin) {
-                        localStorage.clear();
+                        localStorage.clear(); 
+                        loadingState.classList.add('hidden');
+                        accessView.classList.remove('hidden'); 
                     } else if (docSnap.exists()) {
-                        accessError.textContent = 'Código de Acesso inválido. Tente novamente.';
+                        accessError.textContent = 'Código de Acesso inválido.';
                     } else {
-                        accessError.textContent = 'Vendedor não encontrado nesta sessão. Verifique o nome.';
+                        accessError.textContent = 'Vendedor não encontrado. Verifique o nome.';
                     }
                     loadingState.classList.add('hidden');
                     accessView.classList.remove('hidden');
                     return false;
                 }
             } catch (e) {
-                // Erro de rede ou outro
-                if (!isAutoLogin) accessError.textContent = 'Erro ao conectar. Verifique sua internet.';
-                console.error("Erro de autenticação ou busca (v2):", e);
+                handleFirestoreError(e, "tentativa de login");
                 if (isAutoLogin) localStorage.clear();
                 loadingState.classList.add('hidden');
                 accessView.classList.remove('hidden');
+                accessError.textContent = 'Erro ao conectar. Tente novamente.';
                 return false;
             } finally {
-                // Re-habilita o botão de login
                 if (!isAutoLogin && loadDataBtn) {
                      loadDataBtn.disabled = false;
                      loadDataBtn.textContent = 'Aceder Amostras';
-                     loadDataBtn.classList.remove('btn-loading');
                 }
             }
         }
@@ -470,28 +463,35 @@
         loadDataBtn.addEventListener('click', () => {
              loadDataBtn.disabled = true;
              loadDataBtn.textContent = 'A verificar...';
-             loadDataBtn.classList.add('btn-loading');
-             
             const sellerName = document.getElementById('seller-name-input').value.trim();
             const accessCode = document.getElementById('access-code-input').value.trim();
             attemptLogin(sellerName, accessCode);
         });
 
         logoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('sellerName_v2');
-            localStorage.removeItem('sellerAccessCode_v2');
-            if (unsubscribeSamples) unsubscribeSamples();
+            localStorage.removeItem('sellerNameV2');
+            localStorage.removeItem('sellerAccessCodeV2');
+            
+            dataListenersUnsubscribe.forEach(unsub => unsub()); // v2: Para todos listeners
+            dataListenersUnsubscribe = [];
+            
             if (sellerNotificationListenerUnsubscribe) sellerNotificationListenerUnsubscribe();
-            window.location.reload();
+            
+            allSellerSamples = [];
+            sellerNotifications = [];
+            currentSellerDocRef = null;
+            currentSessionId = null;
+            
+            window.location.reload(); 
         });
 
-        // Listeners dos Modais
         sellerNotificationBtn.addEventListener('click', showSellerNotifications);
         closeSellerNotificationsBtn.addEventListener('click', hideSellerNotifications);
         closeSellerNotificationsBtnBottom.addEventListener('click', hideSellerNotifications);
+        
         cancelSellerReplyBtn.addEventListener('click', () => {
             sellerReplyModal.classList.add('hidden');
-            showSellerNotifications();
+            showSellerNotifications(); 
         });
         sendSellerReplyBtn.addEventListener('click', sendReplyToManager);
 
@@ -505,52 +505,103 @@
         });
         cancelFeedbackModalBtn.addEventListener('click', () => feedbackModal.classList.add('hidden'));
         observationInput.addEventListener('input', validateFeedbackForm);
-        saveFeedbackBtn.addEventListener('click', saveFeedback);
+        saveFeedbackBtn.addEventListener('click', saveFeedback); 
 
 
-        // --- Listeners de Dados (v2) ---
-        function startRealtimeListener() {
-            if (unsubscribeSamples) unsubscribeSamples();
+        // --- Realtime Data & Notification Listeners (v2) ---
+        
+        // v2: Ouve a sub-coleção "amostras"
+        function startRealtimeListeners() {
+            if (dataListenersUnsubscribe.length > 0) {
+                dataListenersUnsubscribe.forEach(unsub => unsub());
+                dataListenersUnsubscribe = [];
+            }
             if (!currentSellerDocRef) {
                  console.error("Seller document reference not set.");
                  loadingState.innerHTML = `<h1 class="text-2xl font-bold text-red-600">Erro.</h1><p class="mt-2">Não foi possível carregar os dados. Tente fazer login novamente.</p>`;
                  return;
             }
             
-            // Ouve a sub-coleção 'amostras'
-            const samplesQuery = query(
-                collection(db, currentSellerDocRef.path, "amostras")
+            // Ouve as amostras PENDENTES
+            const pendingQuery = query(
+                collection(db, currentSellerDocRef.path, "amostras"),
+                where("finalizedByVendor", "==", false)
+                // Não é seguro ordenar aqui sem índice
             );
-
-            unsubscribeSamples = onSnapshot(samplesQuery, (snapshot) => {
-                loadingState.classList.add('hidden');
-                mainContent.classList.remove('hidden');
-
-                allSellerSamples = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                if (allSellerSamples.length === 0) {
-                    noDataMessage.classList.remove('hidden');
-                    document.getElementById('pending-section').classList.add('hidden');
-                    document.getElementById('completed-section').classList.add('hidden');
-                } else {
-                    noDataMessage.classList.add('hidden');
-                    const pendingSamplesForDisplay = allSellerSamples.filter(s => !s.finalizedByVendor);
-                    const completedSamples = allSellerSamples.filter(s => s.finalizedByVendor);
-
-                    renderOrders(pendingSamplesForDisplay, 'pending');
-                    renderOrders(completedSamples, 'completed');
-                }
+            const unsubPending = onSnapshot(pendingQuery, (snapshot) => {
+                const pendingSamples = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                updateLocalSamples(pendingSamples, 'pending');
+                renderDashboard();
             }, (error) => {
-                handleFirestoreError(error, `ouvir amostras (sessão: ${currentSessionId})`);
-                loadingState.innerHTML = `<h1 class="text-2xl font-bold text-red-600">Erro de conexão.</h1><p class="mt-2">Tente recarregar a página.</p>`;
-                mainContent.classList.add('hidden');
+                handleFirestoreError(error, "ouvir amostras pendentes");
+            });
+
+            // Ouve as amostras CONCLUÍDAS
+            const completedQuery = query(
+                collection(db, currentSellerDocRef.path, "amostras"),
+                where("finalizedByVendor", "==", true)
+            );
+            const unsubCompleted = onSnapshot(completedQuery, (snapshot) => {
+                const completedSamples = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                updateLocalSamples(completedSamples, 'completed');
+                renderDashboard();
+            }, (error) => {
+                handleFirestoreError(error, "ouvir amostras concluídas");
+            });
+            
+            dataListenersUnsubscribe.push(unsubPending, unsubCompleted);
+        }
+        
+        // v2: Atualiza o cache local de forma inteligente
+        function updateLocalSamples(newSamples, type) {
+            const isCompleted = type === 'completed';
+            
+            // Remove amostras do 'allSellerSamples' que pertencem a este 'tipo'
+            // mas que não estão na nova lista (ex: uma amostra 'completed' foi revertida para 'pending')
+            allSellerSamples = allSellerSamples.filter(sample => {
+                const wasInThisType = sample.finalizedByVendor === isCompleted;
+                if (!wasInThisType) return true; // Mantém
+                
+                // Se estava neste tipo, verifica se ainda está na nova lista
+                return newSamples.some(s_new => s_new.id === sample.id);
+            });
+            
+            // Adiciona/Atualiza as novas amostras
+            newSamples.forEach(newSample => {
+                 const index = allSellerSamples.findIndex(s_old => s_old.id === newSample.id);
+                 if (index > -1) {
+                     allSellerSamples[index] = newSample; // Atualiza
+                 } else {
+                     allSellerSamples.push(newSample); // Adiciona
+                 }
             });
         }
+        
+        // v2: Função de renderização unificada
+        function renderDashboard() {
+            loadingState.classList.add('hidden');
+            mainContent.classList.remove('hidden');
 
-        // Ouve notificações para este vendedor
+            if (allSellerSamples.length === 0) {
+                noDataMessage.classList.remove('hidden');
+                document.getElementById('pending-section').classList.add('hidden');
+                document.getElementById('completed-section').classList.add('hidden');
+            } else {
+                noDataMessage.classList.add('hidden');
+                
+                const pendingSamples = allSellerSamples.filter(s => !s.finalizedByVendor);
+                const completedSamples = allSellerSamples.filter(s => s.finalizedByVendor);
+
+                renderOrders(pendingSamples, 'pending'); 
+                renderOrders(completedSamples, 'completed');
+            }
+        }
+
+
+        // Listen for notifications specifically FOR this seller
         function listenForSellerNotifications() {
             if (!currentSessionId || !currentSellerOriginalName) {
-                console.warn("Não é possível ouvir notificações: Sessão ou Nome do Vendedor em falta.");
+                console.warn("Cannot listen for seller notifications: Session ID or Seller Name missing.");
                 return;
             }
             if (sellerNotificationListenerUnsubscribe) sellerNotificationListenerUnsubscribe();
@@ -562,13 +613,14 @@
 
             sellerNotificationListenerUnsubscribe = onSnapshot(q, (snapshot) => {
                  const previousUnreadCount = sellerNotifications.filter(n => !n.read).length;
+                 
                  sellerNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                  sellerNotifications.sort((a, b) => (b.timestamp?.toDate() ?? 0) - (a.timestamp?.toDate() ?? 0));
+
                  const currentUnreadCount = sellerNotifications.filter(n => !n.read).length;
 
-                 updateSellerNotificationBadge();
+                 updateSellerNotificationBadge(); 
 
-                 // Aciona notificação do navegador se houver novas
                  if (currentUnreadCount > previousUnreadCount && !snapshot.metadata.hasPendingWrites) {
                      snapshot.docChanges().forEach((change) => {
                          if (change.type === "added" && !change.doc.metadata.fromCache) {
@@ -587,13 +639,14 @@
             });
         }
 
-        // --- Funções de Renderização da UI ---
-        function renderOrders(samplesToDisplay, type) {
+        // --- UI Rendering Functions ---
+
+        function renderOrders(samplesToDisplay, type) { 
             const isPendingSection = type === 'pending';
             const container = document.getElementById(`${type}-orders-list`);
             const section = document.getElementById(`${type}-section`);
 
-            if (!container || !section) return;
+            if (!container || !section) return; 
 
             if (samplesToDisplay.length === 0) {
                 section.classList.add('hidden');
@@ -605,24 +658,22 @@
             }
 
             section.classList.remove('hidden');
-            container.innerHTML = '';
+            container.innerHTML = ''; 
 
-            // Agrupa amostras por pedido
             const groupedByOrder = samplesToDisplay.reduce((acc, sample) => {
                 const key = sample.pedido;
-                if (!acc[key]) acc[key] = { ...sample, samples: [] };
+                if (!acc[key]) acc[key] = { ...sample, samples: [] }; 
                 acc[key].samples.push(sample);
                 return acc;
             }, {});
 
-            // Ordena pedidos
              const sortedOrderKeys = Object.keys(groupedByOrder).sort((a, b) => {
                  const numA = parseInt(a, 10);
                  const numB = parseInt(b, 10);
                  if (!isNaN(numA) && !isNaN(numB)) {
-                     return numA - numB;
+                     return numA - numB; 
                  }
-                 return a.localeCompare(b);
+                 return a.localeCompare(b); 
              });
 
             if (isPendingSection) {
@@ -630,7 +681,6 @@
                  if (countEl) countEl.textContent = `${sortedOrderKeys.length} Pedido(s) ${sortedOrderKeys.length > 1 ? '' : ' '}com Pendências`;
             }
 
-            // Cria o HTML para cada grupo de pedido
              sortedOrderKeys.forEach(orderId => {
                  const order = groupedByOrder[orderId];
                 const orderGroup = document.createElement('div');
@@ -638,51 +688,9 @@
                 const statusColor = isPendingSection ? (allSamplesInThisOrderAnswered ? 'blue' : 'yellow') : 'green';
                 orderGroup.className = `bg-white rounded-2xl shadow-sm border-l-4 border-${statusColor}-400 fade-in`;
 
-                // Cria o HTML para as linhas da tabela de amostras
-                const samplesTableRowsHTML = order.samples.map(sample => {
-                    const qty = parseFloat(String(sample.qtde || '0').replace(',', '.'));
-                    let formattedQty = '';
-                    if (!isNaN(qty)) {
-                        formattedQty = qty >= 1 || qty === 0 ? `${qty.toFixed(3).replace('.', ',')}kg` : `${Math.round(qty * 1000)}g`;
-                    } else {
-                        formattedQty = sample.qtde || 'N/A';
-                    }
-
-                    const feedbackDisplay = sample.isPending
-                        ? '<span class="text-yellow-600 font-semibold">Pendente</span>'
-                        : `<div>${sample.feedback || 'N/A'}</div><div class='text-gray-500 font-normal text-xs'>${sample.observation || ''}</div>`;
-
-                    const deleteButtonHtml = !sample.isPending && isPendingSection
-                        ? `<button class="delete-btn bg-red-100 text-red-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-red-200" data-sample-id='${sample.id}'>Excluir</button>`
-                        : '';
-                    const updateButtonText = sample.isPending ? 'Atualizar' : 'Editar';
-                    
-                    const updateButtonHtml = `<button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${updateButtonText}</button>`;
-                    const dotColorClass = sample.isPending ? 'dot-yellow' : 'dot-green';
-
-                    return `
-                        <tr class="border-b last:border-b-0">
-                            <td class="p-3">
-                                <span class="status-dot ${dotColorClass}"></span>
-                                <div class="inline-block align-middle">
-                                    <p class="font-semibold">${sample.produto}</p>
-                                    <p class="text-xs text-gray-500">${sample.descricao || ''}</p>
-                                </div>
-                            </td>
-                            <td class="p-3">${formattedQty}</td>
-                            <td class="p-3 hidden md:table-cell">${sample.originalStatus || 'N/A'}</td>
-                            <td class="p-3">${feedbackDisplay}</td>
-                            <td class="p-3 text-right space-x-2">
-                                ${updateButtonHtml}
-                                ${deleteButtonHtml}
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-                // Monta o card do pedido
+                // NOVO: Adiciona data-order-id ao cabeçalho para a função "Ir para Amostra"
                 orderGroup.innerHTML = `
-                    <div class="p-4 flex justify-between items-center cursor-pointer order-header">
+                    <div class="p-4 flex justify-between items-center cursor-pointer order-header" data-order-id="${orderId}">
                         <div>
                             <h3 class="font-bold text-lg flex items-center"><span class="w-3 h-3 bg-${statusColor}-400 rounded-full mr-3"></span>${order.pedido} - ${order.razaoSocial || 'Cliente Desconhecido'}</h3>
                             <p class="text-sm text-gray-500 ml-6">Nota Fiscal: ${order.notaFiscal || 'N/A'}</p>
@@ -697,22 +705,62 @@
                                     <th class="p-3 font-medium text-gray-500">Qtde.</th>
                                     <th class="p-3 font-medium text-gray-500 hidden md:table-cell">Status Atual</th>
                                     <th class="p-3 font-medium text-gray-500">Feedback</th>
-                                    <th class="p-3"></th>
+                                    <th class="p-3"></th> 
                                 </tr>
                             </thead>
-                            <tbody>${samplesTableRowsHTML}</tbody>
+                            <tbody>${
+                                order.samples.map(sample => {
+                                    const qty = parseFloat(String(sample.qtde || '0').replace(',', '.'));
+                                    let formattedQty = '';
+                                    if (!isNaN(qty)) {
+                                        formattedQty = qty >= 1 || qty === 0 ? `${qty.toFixed(3).replace('.', ',')}kg` : `${Math.round(qty * 1000)}g`;
+                                    } else {
+                                        formattedQty = sample.qtde || 'N/A';
+                                    }
+
+                                    const feedbackDisplay = sample.isPending
+                                        ? '<span class="text-yellow-600 font-semibold">Pendente</span>'
+                                        : `<div>${sample.feedback || 'N/A'}</div><div class='text-gray-500 font-normal text-xs'>${sample.observation || ''}</div>`;
+
+                                    const deleteButtonHtml = !sample.isPending && isPendingSection
+                                        ? `<button class="delete-btn bg-red-100 text-red-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-red-200" data-sample-id='${sample.id}'>Excluir</button>`
+                                        : '';
+                                    const updateButtonText = sample.isPending ? 'Atualizar' : 'Editar';
+                                    
+                                    const updateButtonHtml = `<button class="update-btn bg-blue-100 text-blue-800 font-bold py-1 px-3 rounded-md text-xs hover:bg-blue-200" data-sample-id='${sample.id}'>${updateButtonText}</button>`;
+
+                                    const dotColorClass = sample.isPending ? 'dot-yellow' : 'dot-green';
+
+                                    return `
+                                        <tr class="border-b last:border-b-0">
+                                            <td class="p-3">
+                                                <span class="status-dot ${dotColorClass}"></span>
+                                                <div class="inline-block align-middle">
+                                                    <p class="font-semibold">${sample.produto}</p>
+                                                    <p class="text-xs text-gray-500">${sample.descricao || ''}</p>
+                                                </div>
+                                            </td>
+                                            <td class="p-3">${formattedQty}</td>
+                                            <td class="p-3 hidden md:table-cell">${sample.originalStatus || 'N/A'}</td>
+                                            <td class="p-3">${feedbackDisplay}</td>
+                                            <td class="p-3 text-right space-x-2">
+                                                ${updateButtonHtml}
+                                                ${deleteButtonHtml}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')
+                            }</tbody>
                         </table>
-                        <!-- Botão de Sinalizar Gestor (se pendente) -->
                         ${isPendingSection && allSamplesInThisOrderAnswered ? `
                         <div class="p-4 border-t text-right bg-blue-50">
                             <p class="text-sm text-gray-700 text-left mb-2">Todas as amostras deste pedido foram respondidas. Clique abaixo para notificar o gestor.</p>
                             <button class="signal-manager-btn bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-sm hover:bg-blue-700" data-order-id="${order.pedido}">Sinalizar Gestor</button>
                         </div>` : ''}
-                        <!-- Botão de Reenviar Notificação (se completo) -->
                         ${!isPendingSection ? `
-                        <div class="p-3 border-t text-xs text-gray-500 bg-gray-50 flex justify-between items-center">
-                             <span>Este pedido já foi sinalizado para o gestor.</span>
-                             <button class="resend-notification-btn bg-gray-200 text-gray-700 font-semibold py-1 px-3 rounded-lg text-xs hover:bg-gray-300" data-order-id="${order.pedido}">Reenviar Notificação</button>
+                        <div class="p-3 border-t text-xs text-gray-500 bg-gray-50 text-center flex justify-center">
+                             Este pedido já foi sinalizado.
+                             <button class="resignal-manager-btn bg-blue-100 text-blue-700 font-semibold py-1 px-3 rounded-lg text-xs hover:bg-blue-200 ml-4" data-order-id="${order.pedido}">Reenviar Notificação</button>
                         </div>` : ''}
                     </div>
                 `;
@@ -720,12 +768,11 @@
                 container.appendChild(orderGroup);
             });
 
-            // Adiciona listeners aos elementos recém-criados
             container.querySelectorAll('.order-header').forEach(header => {
                 header.addEventListener('click', () => {
                     const tableDiv = header.nextElementSibling;
                     const arrow = header.querySelector('svg');
-                    tableDiv?.classList.toggle('hidden');
+                    tableDiv?.classList.toggle('hidden'); 
                     arrow?.classList.toggle('rotate-180');
                 });
             });
@@ -736,105 +783,103 @@
                     if (sampleToUpdate) openFeedbackModal(sampleToUpdate);
                 });
             });
-
              container.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const sampleId = e.currentTarget.dataset.sampleId;
-                    if (!confirm('Tem a certeza de que quer excluir este feedback e voltar a amostra para pendente?')) {
+                    if (!confirm('Tem a certeza que quer excluir este feedback e voltar a amostra para pendente?')) {
                          return;
                     }
-                    e.currentTarget.disabled = true;
-                    e.currentTarget.classList.add('btn-loading');
                     
-                    const updates = { 
-                        isPending: true, 
-                        feedback: '', 
-                        observation: '', 
-                        finalizedByVendor: false, 
-                        editedAfterCompletion: false, 
-                        lastUpdate: Timestamp.now()
-                    };
-                    await updateSampleData(sampleId, updates, e.currentTarget);
+                    e.currentTarget.disabled = true;
+                    // v2: Atualiza o doc da amostra individual
+                    const sampleRef = doc(db, currentSellerDocRef.path, "amostras", sampleId);
+                    try {
+                        await updateDoc(sampleRef, {
+                            isPending: true, 
+                            feedback: '', 
+                            observation: '', 
+                            finalizedByVendor: false, 
+                            editedAfterCompletion: false, 
+                            lastUpdate: serverTimestamp() 
+                        });
+                    } catch (error) {
+                         handleFirestoreError(error, "excluir feedback");
+                         e.currentTarget.disabled = false;
+                    }
                 });
             });
-            
-            container.querySelectorAll('.signal-manager-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => handleSignalManager(e.currentTarget, false));
-            });
-            
-            container.querySelectorAll('.resend-notification-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => handleSignalManager(e.currentTarget, true));
-            });
+              container.querySelectorAll('.signal-manager-btn, .resignal-manager-btn').forEach(btn => {
+                  btn.addEventListener('click', (e) => signalManager(e, btn.dataset.orderId));
+              });
         }
         
-        // Função para Sinalizar Gestor / Reenviar Notificação (v2)
-        async function handleSignalManager(button, isResend) {
-            const orderId = button.dataset.orderId;
-            const originalText = button.textContent;
-            button.disabled = true;
-            button.classList.add('btn-loading');
-            button.textContent = isResend ? 'A Reenviar...' : 'A Sinalizar...';
+        async function signalManager(event, orderId) {
+             const btn = event.currentTarget;
+             const isResignal = btn.classList.contains('resignal-manager-btn');
+             btn.disabled = true;
+             btn.textContent = 'A sinalizar...';
 
-            try {
-                // 1. (Apenas ao Sinalizar) Atualiza amostras para 'finalizedByVendor: true'
-                if (!isResend) {
-                    const batch = writeBatch(db);
-                    const samplesToUpdate = allSellerSamples.filter(s => s.pedido === orderId && !s.isPending);
-                    
-                    samplesToUpdate.forEach(sample => {
-                        // Referência correta ao documento da amostra
-                        const sampleRef = doc(db, currentSellerDocRef.path, "amostras", sample.id);
-                        batch.update(sampleRef, { finalizedByVendor: true });
-                    });
-                    await batch.commit();
-                    console.log(`Pedido ${orderId} marcado como finalizado pelo vendedor.`);
-                }
-
-                // 2. Envia notificação ao gestor
-                const sellerName = currentSellerOriginalName;
-                const message = isResend 
-                    ? `<strong>${sellerName}</strong> reenviou a notificação do pedido: <strong>${orderId}</strong>.`
-                    : `<strong>${sellerName}</strong> sinalizou o pedido: <strong>${orderId}</strong> como concluído.`;
-                const color = isResend ? 'blue' : 'purple';
+             try {
+                // Pega todas as amostras deste pedido
+                const samplesToUpdateQuery = query(
+                    collection(db, currentSellerDocRef.path, "amostras"),
+                    where("pedido", "==", orderId),
+                    where("isPending", "==", false) // Apenas as respondidas
+                );
                 
-                const notifRef = collection(db, "sessoes", currentSessionId, "notificacoes");
-                await addDoc(notifRef, {
-                    message,
-                    color: color,
-                    timestamp: serverTimestamp(),
-                    triggerPopup: isResend
+                const samplesSnapshot = await getDocs(samplesToUpdateQuery);
+                
+                if (samplesSnapshot.empty && !isResignal) {
+                     showAlert("Nenhuma amostra respondida encontrada para este pedido.", "Aviso", "text-amber-600");
+                     btn.disabled = false;
+                     btn.textContent = 'Sinalizar Gestor';
+                     return;
+                }
+                
+                // Atualiza 'finalizedByVendor' em todas as amostras deste pedido
+                const batch = writeBatch(db);
+                samplesSnapshot.forEach(sampleDoc => {
+                    batch.update(sampleDoc.ref, { finalizedByVendor: true });
                 });
-
-                if(isResend) {
-                    button.textContent = 'Reenviado!';
-                }
+                await batch.commit();
                 
-                setTimeout(() => {
-                    if (isResend) {
-                        button.disabled = false;
-                        button.classList.remove('btn-loading');
-                        button.textContent = originalText;
-                    }
-                }, 2000);
-
-            } catch(error) {
-                handleFirestoreError(error, `sinalizar gestor (pedido: ${orderId})`);
-                button.disabled = false;
-                button.classList.remove('btn-loading');
-                button.textContent = originalText;
-            }
+                // Envia notificação (mesmo que seja re-sinalização)
+                const sellerName = currentSellerOriginalName;
+                const message = `<strong>${sellerName}</strong> ${isResignal ? 'reenviou a notificação' : 'sinalizou'} do pedido: <strong>${orderId}</strong>.`;
+                const notifId = sanitizeForFirebaseId(`${sellerName}-${orderId}-concluido-${Date.now()}`);
+                const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
+                await setDoc(notifRef, {
+                    message,
+                    color: isResignal ? 'orange' : 'purple',
+                    timestamp: serverTimestamp(),
+                    triggerPopup: true // Aciona popup para re-sinalização
+                });
+                
+                if (isResignal) {
+                    btn.textContent = 'Reenviado!';
+                    setTimeout(() => {
+                        btn.textContent = 'Reenviar Notificação';
+                        btn.disabled = false;
+                    }, 2000);
+                }
+                // Se for sinalização normal, o listener vai mover o card
+                
+             } catch(error) {
+                 handleFirestoreError(error, "sinalizar gestor");
+                 btn.disabled = false;
+                 btn.textContent = isResignal ? 'Reenviar Notificação' : 'Sinalizar Gestor';
+             }
         }
 
-
-        // --- Funções do Modal de Feedback (v2) ---
+        // --- Feedback Modal Functions ---
         function openFeedbackModal(sample) {
             currentSample = sample;
-            selectedFeedback = sample.feedback || null;
+            selectedFeedback = sample.feedback || null; 
             observationInput.value = sample.observation || '';
             modalSampleInfo.textContent = `${sample.produto} - ${sample.descricao || ''}`;
-            modalTitle.textContent = sample.isPending ? 'Atualizar Feedback' : 'Editar Feedback';
+            modalTitle.textContent = sample.isPending ? 'Atualizar Feedback' : 'Editar Feedback'; 
 
-            feedbackOptionsContainer.innerHTML = '';
+            feedbackOptionsContainer.innerHTML = ''; 
             FEEDBACK_CHOICES.forEach(choice => {
                 const button = document.createElement('button');
                 button.textContent = choice;
@@ -844,24 +889,19 @@
                 feedbackOptionsContainer.appendChild(button);
             });
 
-            validateFeedbackForm();
-            feedbackModal.classList.remove('hidden');
+            validateFeedbackForm(); 
+            feedbackModal.classList.remove('hidden'); 
         }
 
-        // Valida o formulário
         function validateFeedbackForm() {
              saveFeedbackBtn.disabled = !observationInput.value.trim() || !selectedFeedback;
         }
 
-        // Salva o feedback
-        async function saveFeedback() {
+        async function saveFeedback() { 
             if (saveFeedbackBtn.disabled) return;
-            
             saveFeedbackBtn.disabled = true;
-            saveFeedbackBtn.classList.add('btn-loading');
             saveFeedbackBtn.textContent = 'A guardar...';
 
-            // Verifica se é uma edição
              const isEditing = !currentSample.isPending;
              const oldFeedback = currentSample.feedback;
              const oldObservation = currentSample.observation;
@@ -869,86 +909,61 @@
              const newObservation = observationInput.value.trim();
              const wasEdited = isEditing && (oldFeedback !== newFeedback || oldObservation !== newObservation);
 
-            // Prepara os dados para atualização
             const updates = {
-                isPending: false,
+                isPending: false, 
                 feedback: newFeedback,
                 observation: newObservation,
-                editedAfterCompletion: wasEdited,
-                lastUpdate: Timestamp.now()
+                editedAfterCompletion: wasEdited, 
+                lastUpdate: serverTimestamp() 
             };
-
-            // Atualiza a amostra individual
-            await updateSampleData(currentSample.id, updates, saveFeedbackBtn);
             
-            feedbackModal.classList.add('hidden'); // Fecha o modal
+            // v2: Atualiza o doc da amostra individual
+            const sampleRef = doc(db, currentSellerDocRef.path, "amostras", currentSample.id);
 
-            // Envia notificação ao gestor SE for uma edição
-            if (wasEdited) {
-                try {
-                    const sellerName = currentSellerOriginalName;
-                    const message = `<strong>${sellerName}</strong> <i>editou</i> o feedback para <strong>${currentSample.produto}</strong> (Pedido ${currentSample.pedido}): ${newFeedback}`;
-                    const notifRef = collection(db, "sessoes", currentSessionId, "notificacoes");
-                    await addDoc(notifRef, {
-                        message,
-                        color: 'orange',
-                        timestamp: serverTimestamp(),
-                        triggerPopup: true
-                    });
-                    console.log("Notificação de edição enviada.");
-                } catch (notifError) {
-                    console.error("Erro ao enviar notificação de edição:", notifError);
-                }
-            }
-        }
-
-        // Função de atualização de amostra individual (v2)
-        async function updateSampleData(sampleId, updates, buttonToReset = null) {
-            if (!currentSellerDocRef) {
-                console.error("Referência do vendedor não definida.");
-                showAlert("Erro: Não foi possível encontrar a referência do vendedor. Tente recarregar a página.");
-                return;
-            }
-
-            // Referência correta ao documento da amostra
-            const sampleRef = doc(db, currentSellerDocRef.path, "amostras", sampleId);
-            
             try {
                 await updateDoc(sampleRef, updates);
-                console.log(`Amostra ${sampleId} atualizada.`);
-            } catch (error) {
-                handleFirestoreError(error, `guardar feedback (amostra: ${sampleId})`);
-            } finally {
-                // Re-ativa o botão, quer tenha sucesso ou falhe
-                if (buttonToReset) {
-                    buttonToReset.disabled = false;
-                    buttonToReset.classList.remove('btn-loading');
-                    if(buttonToReset.id === 'save-button') buttonToReset.textContent = 'Salvar';
-                    if(buttonToReset.classList.contains('delete-btn')) buttonToReset.textContent = 'Excluir';
+                feedbackModal.classList.add('hidden');
+                
+                // Envia notificação de edição
+                if (wasEdited) {
+                    const sellerName = currentSellerOriginalName;
+                    const message = `<strong>${sellerName}</strong> <i>editou</i> o feedback para <strong>${currentSample.produto}</strong> (Pedido ${currentSample.pedido}): ${newFeedback}`;
+                    const notifId = sanitizeForFirebaseId(`edit-${currentSample.id}-${Date.now()}`);
+                    const notifRef = doc(db, "sessoes", currentSessionId, "notificacoes", notifId);
+                    await setDoc(notifRef, {
+                        message,
+                        color: 'orange', 
+                        timestamp: serverTimestamp(), 
+                        triggerPopup: true 
+                    });
                 }
+                
+            } catch (error) {
+                 handleFirestoreError(error, "guardar feedback");
+            } finally {
+                saveFeedbackBtn.disabled = false;
+                saveFeedbackBtn.textContent = 'Salvar';
             }
         }
 
+        // --- Seller Notification Functions (Integrated) ---
 
-        // --- Funções de Notificação do Vendedor (v2) ---
-
-        // Atualiza o crachá do sino
         function updateSellerNotificationBadge() {
-             if(!sellerNotificationCount || !notificationPrompt) return;
+             if(!sellerNotificationCount || !notificationPrompt) return; 
             const unreadCount = sellerNotifications.filter(n => !n.read).length;
             if (unreadCount > 0) {
                 sellerNotificationCount.textContent = unreadCount;
                 sellerNotificationCount.classList.remove('hidden');
-                notificationPrompt.classList.remove('hidden');
+                notificationPrompt.classList.remove('hidden'); 
             } else {
                 sellerNotificationCount.classList.add('hidden');
-                notificationPrompt.classList.add('hidden');
+                notificationPrompt.classList.add('hidden'); 
             }
         }
 
-        // Mostra o modal de notificações
+        // ALTERADO: Remove 'Razão Social' e 'Descrição' do HTML visível
         function showSellerNotifications() {
-            sellerNotificationsList.innerHTML = '';
+            sellerNotificationsList.innerHTML = ''; 
             if (sellerNotifications.length === 0) {
                  sellerNotificationsList.innerHTML = '<p class="text-gray-500">Nenhuma resposta recebida.</p>';
             } else {
@@ -959,18 +974,29 @@
                      const replyButtonHtml = `<button class="seller-reply-btn bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-xs font-semibold ml-2" data-notif-id="${notif.id}">
                                                   ${hasSellerReply ? 'Ver/Responder' : 'Responder'}
                                              </button>`;
+                    
+                    // O botão "Ir para Amostra" AINDA guarda a descrição, mesmo que não seja visível
+                    const goToSampleButtonHtml = `<button class="go-to-sample-btn bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1 rounded text-xs font-semibold ml-2" 
+                                                      data-pedido="${notif.pedido}" 
+                                                      data-produto="${notif.produto}" 
+                                                      data-descricao="${notif.descricao || ''}">
+                                                      Ir para Amostra
+                                                  </button>`;
+
                      const readButtonHtml = !notif.read
                          ? `<button class="mark-as-read-btn bg-gray-200 text-gray-700 hover:bg-gray-300 px-2 py-1 rounded text-xs font-semibold ml-2" data-notif-id="${notif.id}">✓ Marcar como Lida</button>`
                          : `<span class="text-green-500 text-xs font-semibold ml-2">✓ Lida</span>`;
 
                      itemDiv.className = `seller-notification-item text-sm ${!notif.read ? 'font-semibold bg-blue-50 p-2 rounded' : 'text-gray-600 p-2'}`;
+                     
+                     // HTML ATUALIZADO (sem cliente e descrição)
                      itemDiv.innerHTML = `
                          <p class="mb-1">
                              <span class="font-bold">${notif.managerName}</span> respondeu sobre:
                          </p>
-                         <div class="mb-2 p-2 bg-gray-100 rounded border text-xs">
-                             <p><strong>Cliente:</strong> ${notif.razaoSocial || 'N/A'}</p>
-                             <p><strong>Produto:</strong> ${notif.produto || 'N/A'} (${notif.descricao || 'N/A'})</p>
+                         <div class="p-2 bg-gray-50 rounded border border-gray-200 mb-2">
+                            <p><strong>Pedido:</strong> ${notif.pedido || 'N/A'}</p>
+                            <p><strong>Produto:</strong> ${notif.produto || 'N/A'}</p>
                          </div>
                          
                          <div class="manager-reply">${notif.replyMessage}</div>
@@ -983,8 +1009,9 @@
                          ${notif.originalObservation ? `<blockquote>Observação Original: "${notif.originalObservation}"</blockquote>` : ''}
 
                          <div class="flex justify-between items-center mt-2">
-                              <p class="text-xs text-gray-400">${notif.timestamp?.toDate() ? notif.timestamp.toDate().toLocaleString('pt-BR') : ''}</p>
+                              <p class="text-xs text-gray-400">${notif.timestamp?.toDate() ? notif.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p>
                               <div class="flex gap-2">
+                                   ${goToSampleButtonHtml} 
                                    ${replyButtonHtml}
                                    ${readButtonHtml}
                               </div>
@@ -999,17 +1026,52 @@
                  sellerNotificationsList.querySelectorAll('.seller-reply-btn').forEach(btn => {
                      btn.addEventListener('click', openSellerReplyModal);
                  });
+                 sellerNotificationsList.querySelectorAll('.go-to-sample-btn').forEach(btn => {
+                     btn.addEventListener('click', findAndOpenSample);
+                 });
             }
-            sellerNotificationsModal.classList.remove('hidden');
-            notificationPrompt.classList.add('hidden');
+            sellerNotificationsModal.classList.remove('hidden'); 
+             notificationPrompt.classList.add('hidden'); 
+        }
+        
+        // CORREÇÃO AQUI: Procura apenas por Pedido e Produto
+        function findAndOpenSample(e) {
+            const { pedido, produto } = e.currentTarget.dataset;
+            
+            // Procura no cache local (que tem pendentes E concluídas)
+            const sampleToFind = allSellerSamples.find(s => 
+                s.pedido === pedido && 
+                s.produto === produto
+            );
+            
+            if (sampleToFind) {
+                hideSellerNotifications();
+                
+                // Expande o accordion (seja pendente ou concluído)
+                const orderHeader = document.querySelector(`.order-header[data-order-id="${pedido}"]`);
+                if (orderHeader) {
+                    const tableDiv = orderHeader.nextElementSibling;
+                    const arrow = orderHeader.querySelector('svg');
+                    if (tableDiv?.classList.contains('hidden')) {
+                         tableDiv.classList.remove('hidden');
+                         arrow?.classList.add('rotate-180');
+                    }
+                    // Rola a página para o accordion
+                    orderHeader.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                
+                // Abre o modal de feedback
+                openFeedbackModal(sampleToFind);
+            } else {
+                showAlert("Amostra não encontrada. Pode ter sido alterada ou o pedido já não está visível.");
+            }
         }
 
-        // Esconde o modal de notificações
+
         function hideSellerNotifications() {
             sellerNotificationsModal.classList.add('hidden');
         }
 
-        // Marca notificação como lida
         async function markNotificationAsRead(e) {
             const notifId = e.target.dataset.notifId;
             e.target.disabled = true;
@@ -1021,47 +1083,44 @@
                  if (notifIndex > -1) {
                       sellerNotifications[notifIndex].read = true;
                  }
-                 showSellerNotifications();
-                 updateSellerNotificationBadge();
+                 showSellerNotifications(); 
+                 updateSellerNotificationBadge(); 
             } catch (err) {
-                handleFirestoreError(err, "marcar notificação como lida");
-                e.target.disabled = false;
-                e.target.textContent = '✓ Marcar como Lida';
+                 handleFirestoreError(err, "marcar notificação como lida");
+                 e.target.disabled = false;
+                 e.target.textContent = '✓ Marcar como Lida';
             }
         }
 
-        // Abre modal para responder ao gestor
         function openSellerReplyModal(e) {
             const notifId = e.target.dataset.notifId;
             const notification = sellerNotifications.find(n => n.id === notifId);
             if (!notification) return;
 
-            currentNotificationForReply = notification;
+            currentNotificationForReply = notification; 
 
             sellerReplyContext.textContent = `Em resposta a ${notification.managerName} (Ref. ${notification.produto}):`;
             sellerReplyOriginalMsg.textContent = `"${notification.replyMessage}"`;
-            sellerReplyMessageInput.value = notification.sellerReplyMessage || '';
+            sellerReplyMessageInput.value = notification.sellerReplyMessage || ''; 
 
-            sellerNotificationsModal.classList.add('hidden');
-            sellerReplyModal.classList.remove('hidden');
+            sellerNotificationsModal.classList.add('hidden'); 
+            sellerReplyModal.classList.remove('hidden'); 
         }
 
-        // Envia resposta ao gestor
         async function sendReplyToManager() {
             if (!currentNotificationForReply || !currentSessionId || !currentSellerOriginalName) return;
 
             const replyMessage = sellerReplyMessageInput.value.trim();
             if (!replyMessage) {
-                showAlert("Por favor, escreva a sua resposta.");
+                showAlert("Por favor, escreva a sua resposta."); 
                 return;
             }
 
             sendSellerReplyBtn.disabled = true;
-            sendSellerReplyBtn.classList.add('btn-loading');
             sendSellerReplyBtn.textContent = 'A Enviar...';
 
             try {
-                // 1. Cria o documento de resposta para o gestor
+                // 1. Envia para a coleção 'respostasVendedor' (para o gestor)
                 const replyDataForManager = {
                     sellerName: currentSellerOriginalName,
                     replyMessage: replyMessage,
@@ -1069,41 +1128,41 @@
                     originalManagerName: currentNotificationForReply.managerName,
                     pedido: currentNotificationForReply.pedido,
                     produto: currentNotificationForReply.produto,
-                    timestamp: serverTimestamp(),
-                    readByManager: false
+                    timestamp: serverTimestamp(), 
+                    readByManager: false,
+                    readByPd: false // v2
                 };
                 const managerRepliesRef = collection(db, "sessoes", currentSessionId, "respostasVendedor");
                 await addDoc(managerRepliesRef, replyDataForManager);
 
-                // 2. Atualiza a notificação original do vendedor
+                // 2. Atualiza a notificação original
                 const originalNotifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", currentNotificationForReply.id);
                 await updateDoc(originalNotifRef, {
-                    sellerReplyMessage: replyMessage,
-                    read: true
+                    sellerReplyMessage: replyMessage, 
+                    read: true 
                 });
 
-                 // Atualiza UI local
                  const notifIndex = sellerNotifications.findIndex(n => n.id === currentNotificationForReply.id);
                  if (notifIndex > -1) {
                       sellerNotifications[notifIndex].read = true;
                       sellerNotifications[notifIndex].sellerReplyMessage = replyMessage;
                  }
-                 updateSellerNotificationBadge();
-                 sellerReplyModal.classList.add('hidden');
-                 showSellerNotifications();
+                 updateSellerNotificationBadge(); 
+
+                 sellerReplyModal.classList.add('hidden'); 
+                 showSellerNotifications(); 
 
             } catch (error) {
                 handleFirestoreError(error, "enviar resposta ao gestor");
             } finally {
                 sendSellerReplyBtn.disabled = false;
-                sendSellerReplyBtn.classList.remove('btn-loading');
                 sendSellerReplyBtn.textContent = 'Enviar Resposta';
-                currentNotificationForReply = null;
+                currentNotificationForReply = null; 
             }
         }
 
 
-        // --- Funções de Notificação do Navegador ---
+        // --- Browser Notification Functions ---
         function requestNotificationPermission() {
             if (!("Notification" in window)) {
                 console.warn("Este navegador não suporta notificações desktop");
@@ -1118,28 +1177,28 @@
 
         function showBrowserNotification(title, body) {
             if (Notification.permission === 'granted') {
-                 if (document.visibilityState === 'visible') {
+                 if (document.visibilityState === 'visible') { 
                       console.log("Tab is active, skipping browser notification.");
                       return;
                  }
                 const notification = new Notification(title, {
                     body: body,
-                    icon: 'https://img.icons8.com/fluency/96/send-letter.png'
+                    icon: 'https://img.icons8.com/fluency/96/send-letter.png' 
                 });
             }
         }
 
 
-        // --- Carregamento Inicial ---
+        // --- Initial Load Logic (v2) ---
         async function checkLocalStorage() {
-            const savedSellerName = localStorage.getItem('sellerName_v2');
-            const savedAccessCode = localStorage.getItem('sellerAccessCode_v2');
+            const savedSellerName = localStorage.getItem('sellerNameV2');
+            const savedAccessCode = localStorage.getItem('sellerAccessCodeV2');
 
             if (savedSellerName && savedAccessCode) {
                  loadingMessage.textContent = 'A verificar sessão guardada...';
                  accessView.classList.add('hidden');
                  loadingState.classList.remove('hidden');
-                 const loginSuccess = await attemptLogin(savedSellerName, savedAccessCode, true);
+                 const loginSuccess = await attemptLogin(savedSellerName, savedAccessCode, true); 
                  if (!loginSuccess) {
                      console.log("Auto-login falhou. A mostrar ecrã de login.");
                  }
@@ -1151,8 +1210,8 @@
 
         (async () => {
              try {
-                 await signInAnonymously(auth);
-                 await checkLocalStorage();
+                 await signInAnonymously(auth); 
+                 await checkLocalStorage(); 
              } catch (error) {
                  console.error("Firebase Auth Error:", error);
                  accessError.textContent = "Não foi possível conectar ao serviço.";
@@ -1164,6 +1223,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
