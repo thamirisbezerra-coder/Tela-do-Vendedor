@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tela do Vendedor (v2)</title>
+    <title>Tela do Vendedor (v2.1 - Novos Dados)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -73,7 +73,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
                 <h1 class="text-2xl font-bold text-gray-800">Olá, vendedor(a) Doremus!</h1>
-                <p class="text-gray-600 mt-2">Este é o seu painel de feedbacks de amostras (v2).</p>
+                <p class="text-gray-600 mt-2">Este é o seu painel de feedbacks de amostras (v2.1).</p>
             </div>
             <div class="space-y-4">
                 <div>
@@ -87,7 +87,7 @@
             </div>
             <button id="load-data-btn" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-all">Aceder Amostras</button>
             <p id="access-error" class="text-red-500 text-sm mt-3 h-4 text-center"></p>
-            <p class="text-xs text-gray-400 mt-8">Doremus, 2025 (v2)</p>
+            <p class="text-xs text-gray-400 mt-8">Doremus, 2026 (v2.1 - Estrutura Nova)</p>
         </div>
     </div>
 
@@ -98,7 +98,7 @@
 
     <!-- Main Content -->
     <div id="main-content" class="hidden flex items-center justify-center min-h-screen p-4">
-        <div class="w-full max-w-5xl">
+        <div class="w-full max-w-6xl"> <!-- Aumentado para comportar novas colunas -->
              <header class="mb-8 text-center relative flex justify-between items-start">
                  <div> 
                      <h1 id="welcome-title" class="text-3xl font-bold text-gray-800 text-left">Olá!</h1>
@@ -119,22 +119,19 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-200">
-                    <h3 class="font-bold text-lg mb-2 text-gray-800">Como Funciona? (v2)</h3>
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Como Funciona? (v2.1)</h3>
                     <ol class="list-decimal list-inside text-sm text-gray-600 space-y-1">
-                        <li>Expanda um pedido para ver as amostras.</li>
+                        <li>Expanda um pedido para ver as amostras e <strong>detalhes novos (Preço/Estoque)</strong>.</li>
                         <li>Clique em <strong>"Atualizar"</strong> (ou "Editar" se já respondeu).</li>
                         <li>Selecione uma opção e escreva a observação.</li>
                         <li>Quando todas as amostras de um pedido forem respondidas (todas <span class="status-dot dot-green"></span>), clique em <strong>"Sinalizar Gestor"</strong>.</li>
-                        <li>Verifique as respostas do gestor no <strong class="text-blue-600">sino 🔔</strong>. Pode clicar em "Ir para Amostra" na notificação.</li>
                     </ol>
                 </div>
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
-                    <h3 class="font-bold text-lg mb-2 text-gray-800">Dúvidas?</h3>
-                    <p class="text-sm text-gray-600">Se encontrar algum problema ou tiver alguma questão sobre o preenchimento, não hesite em me contatar.</p>
-                    <p class="text-sm text-gray-600 mt-2">Pode me chamar no <strong>chat</strong> ou enviar um <strong>e-mail</strong>.</p>
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Suporte</h3>
+                    <p class="text-sm text-gray-600">Se notar dados incorretos nos novos campos (Preço/Estoque), contate o P&D.</p>
                     <div class="mt-4 pt-4 border-t border-gray-200">
-                        <p class="text-sm font-semibold text-gray-800">Thamiris Bezerra</p>
-                        <p class="text-sm text-gray-600">thamiris.bezerra@doremus.com.br</p>
+                        <p class="text-sm font-semibold text-gray-800">Equipe de Sistemas</p>
                     </div>
                 </div>
             </div>
@@ -161,6 +158,12 @@
     <div id="feedback-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-20">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col max-h-[90vh]">
             <h3 class="text-2xl font-bold mb-4 flex-shrink-0" id="modal-title">Atualizar Feedback</h3>
+            
+            <!-- NEW: Extra info display in modal -->
+            <div id="modal-extra-info" class="mb-4 bg-gray-50 p-2 rounded text-xs text-gray-500 hidden">
+                 <!-- Populated via JS -->
+            </div>
+
             <p class="text-gray-600 mb-2 flex-shrink-0">Selecione uma das opções abaixo para a amostra:</p>
             <p class="font-semibold text-gray-800 mb-6 flex-shrink-0" id="modal-sample-info"></p>
 
@@ -254,27 +257,29 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Feedback choices 
-        const FEEDBACK_CHOICES = [
-            'A - COM PEDIDO',
-            'A - APROVADA SEM PEDIDO',
-            'P - AMOSTRA NÃO TESTADA',
-            'P - EM ANÁLISE',
-            'P - AMOSTRA SEM FEEDBACK',
-            'R - APRESENTAÇÃO PRÓ ATIVA',
-            'R - CALIBRE',
-            'R - EXTRAVIADA',
-            'R - FORA DA ESPECIFICAÇÃO DO CLIENTE',
-            'R - FORA DO PERFIL DO CLIENTE',
-            'R - FRACA / ESTOURANDO / COM CHUVEIRO',
-            'R - PRODUTO DESCONTINUADO',
-            'R - QUANTIDADE INSUFICIENTE',
-            'R - REPRESENTAÇÃO / DISTRIBUIDOR',
-            'R - SEM RETORNO DO CLIENTE',
-            'E - INNOVATION / EVENTOS',
-            'E - EVENTO',
-            'R - EXPORTACAO'
-        ];
+        // CONFIGURAÇÃO DINÂMICA (Idealmente viria do DB)
+        const APP_CONFIG = {
+            feedbackOptions: [
+                'A - COM PEDIDO',
+                'A - APROVADA SEM PEDIDO',
+                'P - AMOSTRA NÃO TESTADA',
+                'P - EM ANÁLISE',
+                'P - AMOSTRA SEM FEEDBACK',
+                'R - APRESENTAÇÃO PRÓ ATIVA',
+                'R - CALIBRE',
+                'R - EXTRAVIADA',
+                'R - FORA DA ESPECIFICAÇÃO DO CLIENTE',
+                'R - FORA DO PERFIL DO CLIENTE',
+                'R - FRACA / ESTOURANDO / COM CHUVEIRO',
+                'R - PRODUTO DESCONTINUADO',
+                'R - QUANTIDADE INSUFICIENTE',
+                'R - REPRESENTAÇÃO / DISTRIBUIDOR',
+                'R - SEM RETORNO DO CLIENTE',
+                'E - INNOVATION / EVENTOS',
+                'E - EVENTO',
+                'R - EXPORTACAO'
+            ]
+        };
 
         // --- DOM Elements ---
         const accessView = document.getElementById('access-view');
@@ -286,7 +291,7 @@
         const accessError = document.getElementById('access-error');
         const noDataMessage = document.getElementById('no-data-message');
         const welcomeTitle = document.getElementById('welcome-title');
-        const sessionInfo = document.getElementById('session-info'); // v2
+        const sessionInfo = document.getElementById('session-info');
 
         // Seller Notification Elements
         const sellerNotificationBtn = document.getElementById('seller-notification-btn');
@@ -310,6 +315,7 @@
         const feedbackModal = document.getElementById('feedback-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalSampleInfo = document.getElementById('modal-sample-info');
+        const modalExtraInfo = document.getElementById('modal-extra-info'); // New
         const feedbackOptionsContainer = document.getElementById('feedback-options');
         const observationInput = document.getElementById('observation');
         const cancelFeedbackModalBtn = document.getElementById('cancel-modal-btn'); 
@@ -325,17 +331,23 @@
         let currentSample = null; 
         let selectedFeedback = null; 
         let currentSellerDocRef = null; 
-        let allSellerSamples = []; // Local cache of seller's samples
-        let dataListenersUnsubscribe = []; // v2: Array of listeners
+        let allSellerSamples = []; 
+        let dataListenersUnsubscribe = []; 
         let sellerNotificationListenerUnsubscribe = null; 
         let currentSessionId = null; 
         let currentSellerOriginalName = null; 
         let sellerNotifications = []; 
-        let currentActiveSessionName = "Sessão"; // v2
+        let currentActiveSessionName = "Sessão"; 
 
         // --- Utility Functions ---
         const normalizeText = (text = '') => text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() : '';
         const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
+        
+        // NEW: Formatter for currency
+        const formatCurrency = (value) => {
+            if (value === undefined || value === null) return '---';
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        };
 
         function showAlert(message, title = "Erro na Operação", color = "text-red-600") {
             customAlertTitle.textContent = title;
@@ -361,7 +373,7 @@
             showAlert(message, title, color);
         }
 
-        // --- Authentication & Data Loading (v2) ---
+        // --- Authentication & Data Loading ---
         
         async function getActiveSession() {
              try {
@@ -369,11 +381,9 @@
                 const docSnap = await getDoc(activeSessionRef);
                 if (docSnap.exists() && docSnap.data().current) {
                     const sessionDocId = docSnap.data().current;
-                    // Busca o nome da sessão (se existir)
                     const sessionConfigRef = doc(db, "sessoes", sessionDocId, "configuracoes", "geral");
                     const configSnap = await getDoc(sessionConfigRef);
                     const sessionName = configSnap.exists() ? configSnap.data().nome : sessionDocId;
-                    
                     return { id: sessionDocId, name: sessionName };
                 } else {
                     return null;
@@ -415,7 +425,7 @@
 
                 if (docSnap.exists() && docSnap.data().accessCode === accessCode) {
                     currentSellerDocRef = docRef;
-                    currentSellerOriginalName = docSnap.data().originalName; // Pega o nome com case correto
+                    currentSellerOriginalName = docSnap.data().originalName; 
                     welcomeTitle.textContent = `Olá, ${currentSellerOriginalName}!`; 
 
                     if (!isAutoLogin) {
@@ -427,7 +437,7 @@
                     loadingState.textContent = 'A carregar as suas amostras...';
 
                     requestNotificationPermission(); 
-                    startRealtimeListeners(); // v2: Plural
+                    startRealtimeListeners(); 
                     listenForSellerNotifications(); 
                     return true;
                 } else {
@@ -472,7 +482,7 @@
             localStorage.removeItem('sellerNameV2');
             localStorage.removeItem('sellerAccessCodeV2');
             
-            dataListenersUnsubscribe.forEach(unsub => unsub()); // v2: Para todos listeners
+            dataListenersUnsubscribe.forEach(unsub => unsub());
             dataListenersUnsubscribe = [];
             
             if (sellerNotificationListenerUnsubscribe) sellerNotificationListenerUnsubscribe();
@@ -508,9 +518,8 @@
         saveFeedbackBtn.addEventListener('click', saveFeedback); 
 
 
-        // --- Realtime Data & Notification Listeners (v2) ---
+        // --- Realtime Data & Notification Listeners ---
         
-        // v2: Ouve a sub-coleção "amostras"
         function startRealtimeListeners() {
             if (dataListenersUnsubscribe.length > 0) {
                 dataListenersUnsubscribe.forEach(unsub => unsub());
@@ -522,11 +531,10 @@
                  return;
             }
             
-            // Ouve as amostras PENDENTES
+            // Pending samples
             const pendingQuery = query(
                 collection(db, currentSellerDocRef.path, "amostras"),
                 where("finalizedByVendor", "==", false)
-                // Não é seguro ordenar aqui sem índice
             );
             const unsubPending = onSnapshot(pendingQuery, (snapshot) => {
                 const pendingSamples = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -536,7 +544,7 @@
                 handleFirestoreError(error, "ouvir amostras pendentes");
             });
 
-            // Ouve as amostras CONCLUÍDAS
+            // Completed samples
             const completedQuery = query(
                 collection(db, currentSellerDocRef.path, "amostras"),
                 where("finalizedByVendor", "==", true)
@@ -552,32 +560,25 @@
             dataListenersUnsubscribe.push(unsubPending, unsubCompleted);
         }
         
-        // v2: Atualiza o cache local de forma inteligente
         function updateLocalSamples(newSamples, type) {
             const isCompleted = type === 'completed';
             
-            // Remove amostras do 'allSellerSamples' que pertencem a este 'tipo'
-            // mas que não estão na nova lista (ex: uma amostra 'completed' foi revertida para 'pending')
             allSellerSamples = allSellerSamples.filter(sample => {
                 const wasInThisType = sample.finalizedByVendor === isCompleted;
-                if (!wasInThisType) return true; // Mantém
-                
-                // Se estava neste tipo, verifica se ainda está na nova lista
+                if (!wasInThisType) return true;
                 return newSamples.some(s_new => s_new.id === sample.id);
             });
             
-            // Adiciona/Atualiza as novas amostras
             newSamples.forEach(newSample => {
                  const index = allSellerSamples.findIndex(s_old => s_old.id === newSample.id);
                  if (index > -1) {
-                     allSellerSamples[index] = newSample; // Atualiza
+                     allSellerSamples[index] = newSample; 
                  } else {
-                     allSellerSamples.push(newSample); // Adiciona
+                     allSellerSamples.push(newSample); 
                  }
             });
         }
         
-        // v2: Função de renderização unificada
         function renderDashboard() {
             loadingState.classList.add('hidden');
             mainContent.classList.remove('hidden');
@@ -588,22 +589,16 @@
                 document.getElementById('completed-section').classList.add('hidden');
             } else {
                 noDataMessage.classList.add('hidden');
-                
                 const pendingSamples = allSellerSamples.filter(s => !s.finalizedByVendor);
                 const completedSamples = allSellerSamples.filter(s => s.finalizedByVendor);
-
                 renderOrders(pendingSamples, 'pending'); 
                 renderOrders(completedSamples, 'completed');
             }
         }
 
 
-        // Listen for notifications specifically FOR this seller
         function listenForSellerNotifications() {
-            if (!currentSessionId || !currentSellerOriginalName) {
-                console.warn("Cannot listen for seller notifications: Session ID or Seller Name missing.");
-                return;
-            }
+            if (!currentSessionId || !currentSellerOriginalName) return;
             if (sellerNotificationListenerUnsubscribe) sellerNotificationListenerUnsubscribe();
 
             const q = query(
@@ -617,11 +612,9 @@
                  sellerNotifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                  sellerNotifications.sort((a, b) => (b.timestamp?.toDate() ?? 0) - (a.timestamp?.toDate() ?? 0));
 
-                 const currentUnreadCount = sellerNotifications.filter(n => !n.read).length;
-
                  updateSellerNotificationBadge(); 
 
-                 if (currentUnreadCount > previousUnreadCount && !snapshot.metadata.hasPendingWrites) {
+                 if (sellerNotifications.filter(n => !n.read).length > previousUnreadCount && !snapshot.metadata.hasPendingWrites) {
                      snapshot.docChanges().forEach((change) => {
                          if (change.type === "added" && !change.doc.metadata.fromCache) {
                              const newData = change.doc.data();
@@ -639,7 +632,7 @@
             });
         }
 
-        // --- UI Rendering Functions ---
+        // --- UI Rendering Functions (UPDATED FOR NEW DATA) ---
 
         function renderOrders(samplesToDisplay, type) { 
             const isPendingSection = type === 'pending';
@@ -688,7 +681,6 @@
                 const statusColor = isPendingSection ? (allSamplesInThisOrderAnswered ? 'blue' : 'yellow') : 'green';
                 orderGroup.className = `bg-white rounded-2xl shadow-sm border-l-4 border-${statusColor}-400 fade-in`;
 
-                // NOVO: Adiciona data-order-id ao cabeçalho para a função "Ir para Amostra"
                 orderGroup.innerHTML = `
                     <div class="p-4 flex justify-between items-center cursor-pointer order-header" data-order-id="${orderId}">
                         <div>
@@ -701,11 +693,15 @@
                         <table class="min-w-full text-sm">
                             <thead class="bg-gray-50 text-left">
                                 <tr>
-                                    <th class="p-3 font-medium text-gray-500">Produto</th>
+                                    <th class="p-3 font-medium text-gray-500 w-1/4">Produto</th>
                                     <th class="p-3 font-medium text-gray-500">Qtde.</th>
+                                    <!-- NEW COLUMNS -->
+                                    <th class="p-3 font-medium text-gray-500">Preço Sug.</th>
+                                    <th class="p-3 font-medium text-gray-500">Estoque</th>
+                                    <!-- END NEW COLUMNS -->
                                     <th class="p-3 font-medium text-gray-500 hidden md:table-cell">Status Atual</th>
-                                    <th class="p-3 font-medium text-gray-500">Feedback</th>
-                                    <th class="p-3"></th> 
+                                    <th class="p-3 font-medium text-gray-500 w-1/4">Feedback</th>
+                                    <th class="p-3 w-24"></th> 
                                 </tr>
                             </thead>
                             <tbody>${
@@ -717,6 +713,10 @@
                                     } else {
                                         formattedQty = sample.qtde || 'N/A';
                                     }
+                                    
+                                    // New Data Safe Handling
+                                    const priceDisplay = sample.price ? formatCurrency(sample.price) : '<span class="text-gray-300">---</span>';
+                                    const stockDisplay = sample.stock ? `${sample.stock} un` : '<span class="text-gray-300">---</span>';
 
                                     const feedbackDisplay = sample.isPending
                                         ? '<span class="text-yellow-600 font-semibold">Pendente</span>'
@@ -732,16 +732,20 @@
                                     const dotColorClass = sample.isPending ? 'dot-yellow' : 'dot-green';
 
                                     return `
-                                        <tr class="border-b last:border-b-0">
+                                        <tr class="border-b last:border-b-0 hover:bg-gray-50">
                                             <td class="p-3">
                                                 <span class="status-dot ${dotColorClass}"></span>
                                                 <div class="inline-block align-middle">
-                                                    <p class="font-semibold">${sample.produto}</p>
+                                                    <p class="font-semibold text-gray-800">${sample.produto}</p>
                                                     <p class="text-xs text-gray-500">${sample.descricao || ''}</p>
                                                 </div>
                                             </td>
-                                            <td class="p-3">${formattedQty}</td>
-                                            <td class="p-3 hidden md:table-cell">${sample.originalStatus || 'N/A'}</td>
+                                            <td class="p-3 font-medium">${formattedQty}</td>
+                                            <!-- NEW DATA CELLS -->
+                                            <td class="p-3 text-gray-600">${priceDisplay}</td>
+                                            <td class="p-3 text-gray-600">${stockDisplay}</td>
+                                            <!-- END NEW DATA CELLS -->
+                                            <td class="p-3 hidden md:table-cell text-gray-600">${sample.originalStatus || 'N/A'}</td>
                                             <td class="p-3">${feedbackDisplay}</td>
                                             <td class="p-3 text-right space-x-2">
                                                 ${updateButtonHtml}
@@ -791,7 +795,6 @@
                     }
                     
                     e.currentTarget.disabled = true;
-                    // v2: Atualiza o doc da amostra individual
                     const sampleRef = doc(db, currentSellerDocRef.path, "amostras", sampleId);
                     try {
                         await updateDoc(sampleRef, {
@@ -820,11 +823,10 @@
              btn.textContent = 'A sinalizar...';
 
              try {
-                // Pega todas as amostras deste pedido
                 const samplesToUpdateQuery = query(
                     collection(db, currentSellerDocRef.path, "amostras"),
                     where("pedido", "==", orderId),
-                    where("isPending", "==", false) // Apenas as respondidas
+                    where("isPending", "==", false) 
                 );
                 
                 const samplesSnapshot = await getDocs(samplesToUpdateQuery);
@@ -836,14 +838,12 @@
                      return;
                 }
                 
-                // Atualiza 'finalizedByVendor' em todas as amostras deste pedido
                 const batch = writeBatch(db);
                 samplesSnapshot.forEach(sampleDoc => {
                     batch.update(sampleDoc.ref, { finalizedByVendor: true });
                 });
                 await batch.commit();
                 
-                // Envia notificação (mesmo que seja re-sinalização)
                 const sellerName = currentSellerOriginalName;
                 const message = `<strong>${sellerName}</strong> ${isResignal ? 'reenviou a notificação' : 'sinalizou'} do pedido: <strong>${orderId}</strong>.`;
                 const notifId = sanitizeForFirebaseId(`${sellerName}-${orderId}-concluido-${Date.now()}`);
@@ -852,7 +852,7 @@
                     message,
                     color: isResignal ? 'orange' : 'purple',
                     timestamp: serverTimestamp(),
-                    triggerPopup: true // Aciona popup para re-sinalização
+                    triggerPopup: true 
                 });
                 
                 if (isResignal) {
@@ -862,7 +862,6 @@
                         btn.disabled = false;
                     }, 2000);
                 }
-                // Se for sinalização normal, o listener vai mover o card
                 
              } catch(error) {
                  handleFirestoreError(error, "sinalizar gestor");
@@ -878,9 +877,17 @@
             observationInput.value = sample.observation || '';
             modalSampleInfo.textContent = `${sample.produto} - ${sample.descricao || ''}`;
             modalTitle.textContent = sample.isPending ? 'Atualizar Feedback' : 'Editar Feedback'; 
+            
+            // NEW: Show extra info in modal
+            if (sample.price || sample.stock) {
+                 modalExtraInfo.innerHTML = `Info Adicional: <strong>Preço:</strong> ${formatCurrency(sample.price)} | <strong>Estoque:</strong> ${sample.stock || '---'}`;
+                 modalExtraInfo.classList.remove('hidden');
+            } else {
+                 modalExtraInfo.classList.add('hidden');
+            }
 
             feedbackOptionsContainer.innerHTML = ''; 
-            FEEDBACK_CHOICES.forEach(choice => {
+            APP_CONFIG.feedbackOptions.forEach(choice => {
                 const button = document.createElement('button');
                 button.textContent = choice;
                 button.dataset.feedback = choice;
@@ -917,14 +924,12 @@
                 lastUpdate: serverTimestamp() 
             };
             
-            // v2: Atualiza o doc da amostra individual
             const sampleRef = doc(db, currentSellerDocRef.path, "amostras", currentSample.id);
 
             try {
                 await updateDoc(sampleRef, updates);
                 feedbackModal.classList.add('hidden');
                 
-                // Envia notificação de edição
                 if (wasEdited) {
                     const sellerName = currentSellerOriginalName;
                     const message = `<strong>${sellerName}</strong> <i>editou</i> o feedback para <strong>${currentSample.produto}</strong> (Pedido ${currentSample.pedido}): ${newFeedback}`;
@@ -946,7 +951,7 @@
             }
         }
 
-        // --- Seller Notification Functions (Integrated) ---
+        // --- Seller Notification Functions ---
 
         function updateSellerNotificationBadge() {
              if(!sellerNotificationCount || !notificationPrompt) return; 
@@ -961,7 +966,6 @@
             }
         }
 
-        // ALTERADO: Remove 'Razão Social' e 'Descrição' do HTML visível
         function showSellerNotifications() {
             sellerNotificationsList.innerHTML = ''; 
             if (sellerNotifications.length === 0) {
@@ -975,7 +979,6 @@
                                                   ${hasSellerReply ? 'Ver/Responder' : 'Responder'}
                                              </button>`;
                     
-                    // O botão "Ir para Amostra" AINDA guarda a descrição, mesmo que não seja visível
                     const goToSampleButtonHtml = `<button class="go-to-sample-btn bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1 rounded text-xs font-semibold ml-2" 
                                                       data-pedido="${notif.pedido}" 
                                                       data-produto="${notif.produto}" 
@@ -989,7 +992,6 @@
 
                      itemDiv.className = `seller-notification-item text-sm ${!notif.read ? 'font-semibold bg-blue-50 p-2 rounded' : 'text-gray-600 p-2'}`;
                      
-                     // HTML ATUALIZADO (sem cliente e descrição)
                      itemDiv.innerHTML = `
                          <p class="mb-1">
                              <span class="font-bold">${notif.managerName}</span> respondeu sobre:
@@ -1034,11 +1036,9 @@
              notificationPrompt.classList.add('hidden'); 
         }
         
-        // CORREÇÃO AQUI: Procura apenas por Pedido e Produto
         function findAndOpenSample(e) {
             const { pedido, produto } = e.currentTarget.dataset;
             
-            // Procura no cache local (que tem pendentes E concluídas)
             const sampleToFind = allSellerSamples.find(s => 
                 s.pedido === pedido && 
                 s.produto === produto
@@ -1047,7 +1047,6 @@
             if (sampleToFind) {
                 hideSellerNotifications();
                 
-                // Expande o accordion (seja pendente ou concluído)
                 const orderHeader = document.querySelector(`.order-header[data-order-id="${pedido}"]`);
                 if (orderHeader) {
                     const tableDiv = orderHeader.nextElementSibling;
@@ -1056,11 +1055,8 @@
                          tableDiv.classList.remove('hidden');
                          arrow?.classList.add('rotate-180');
                     }
-                    // Rola a página para o accordion
                     orderHeader.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
-                
-                // Abre o modal de feedback
                 openFeedbackModal(sampleToFind);
             } else {
                 showAlert("Amostra não encontrada. Pode ter sido alterada ou o pedido já não está visível.");
@@ -1120,7 +1116,6 @@
             sendSellerReplyBtn.textContent = 'A Enviar...';
 
             try {
-                // 1. Envia para a coleção 'respostasVendedor' (para o gestor)
                 const replyDataForManager = {
                     sellerName: currentSellerOriginalName,
                     replyMessage: replyMessage,
@@ -1130,12 +1125,11 @@
                     produto: currentNotificationForReply.produto,
                     timestamp: serverTimestamp(), 
                     readByManager: false,
-                    readByPd: false // v2
+                    readByPd: false
                 };
                 const managerRepliesRef = collection(db, "sessoes", currentSessionId, "respostasVendedor");
                 await addDoc(managerRepliesRef, replyDataForManager);
 
-                // 2. Atualiza a notificação original
                 const originalNotifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", currentNotificationForReply.id);
                 await updateDoc(originalNotifRef, {
                     sellerReplyMessage: replyMessage, 
@@ -1189,7 +1183,7 @@
         }
 
 
-        // --- Initial Load Logic (v2) ---
+        // --- Initial Load Logic ---
         async function checkLocalStorage() {
             const savedSellerName = localStorage.getItem('sellerNameV2');
             const savedAccessCode = localStorage.getItem('sellerAccessCodeV2');
@@ -1223,6 +1217,7 @@
     </script>
 </body>
 </html>
+
 
 
 
