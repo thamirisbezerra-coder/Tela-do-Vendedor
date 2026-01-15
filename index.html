@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tela do Vendedor (v2.1 - Novos Dados)</title>
+    <title>Tela do Vendedor (v2.7)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -69,11 +69,10 @@
     <div id="access-view" class="grid place-items-center min-h-screen p-4">
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 w-full max-w-md p-8 text-center">
             <div class="mb-8">
-                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-20 w-20 text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+                <!-- LOGO DOREMUS -->
+                <img src="https://i.postimg.cc/76mXWMJh/as-02.png" alt="Doremus Logo" class="mx-auto h-24 mb-4 object-contain">
                 <h1 class="text-2xl font-bold text-gray-800">Olá, vendedor(a) Doremus!</h1>
-                <p class="text-gray-600 mt-2">Este é o seu painel de feedbacks de amostras (v2.1).</p>
+                <p class="text-gray-600 mt-2">Este é o seu painel de feedbacks de amostras (v2.7).</p>
             </div>
             <div class="space-y-4">
                 <div>
@@ -87,7 +86,7 @@
             </div>
             <button id="load-data-btn" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-all">Aceder Amostras</button>
             <p id="access-error" class="text-red-500 text-sm mt-3 h-4 text-center"></p>
-            <p class="text-xs text-gray-400 mt-8">Doremus, 2026 (v2.1 - Estrutura Nova)</p>
+            <p class="text-xs text-gray-400 mt-8">Doremus, 2026 (v2.7)</p>
         </div>
     </div>
 
@@ -98,7 +97,7 @@
 
     <!-- Main Content -->
     <div id="main-content" class="hidden flex items-center justify-center min-h-screen p-4">
-        <div class="w-full max-w-6xl"> <!-- Aumentado para comportar novas colunas -->
+        <div class="w-full max-w-6xl">
              <header class="mb-8 text-center relative flex justify-between items-start">
                  <div> 
                      <h1 id="welcome-title" class="text-3xl font-bold text-gray-800 text-left">Olá!</h1>
@@ -119,9 +118,9 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-200">
-                    <h3 class="font-bold text-lg mb-2 text-gray-800">Como Funciona? (v2.1)</h3>
+                    <h3 class="font-bold text-lg mb-2 text-gray-800">Como Funciona? (v2.7)</h3>
                     <ol class="list-decimal list-inside text-sm text-gray-600 space-y-1">
-                        <li>Expanda um pedido para ver as amostras e <strong>detalhes novos (Preço/Estoque)</strong>.</li>
+                        <li>Expanda um pedido para ver as amostras e <strong>detalhes (Preço/Estoque)</strong>.</li>
                         <li>Clique em <strong>"Atualizar"</strong> (ou "Editar" se já respondeu).</li>
                         <li>Selecione uma opção e escreva a observação.</li>
                         <li>Quando todas as amostras de um pedido forem respondidas (todas <span class="status-dot dot-green"></span>), clique em <strong>"Sinalizar Gestor"</strong>.</li>
@@ -1217,8 +1216,6 @@
     </script>
 </body>
 </html>
-
-
 
 
 
