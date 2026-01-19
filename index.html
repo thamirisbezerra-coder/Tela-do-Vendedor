@@ -12,7 +12,7 @@
     <!-- Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kalam:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
@@ -34,13 +34,14 @@
             opacity: 1;
         }
         
+        /* Note Section Animation - Aumentei a altura máxima */
         .note-section {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease;
         }
         .note-section.open {
-            max-height: 200px; 
+            max-height: 500px; /* Aumentado para garantir visibilidade */
         }
 
         .chevron { transition: transform 0.3s ease; }
@@ -55,6 +56,7 @@
             border-color: #6366f1;
         }
 
+        /* Estilo para Pedido Baixado (Rosa Claro) */
         .order-discharged {
             background-color: #fff1f2 !important; /* Rose-50 */
             border-color: #fda4af !important; /* Rose-300 */
@@ -62,10 +64,13 @@
         .order-discharged .chevron { color: #be123c !important; }
         .order-discharged h3 { color: #881337 !important; }
         
-        .embedded-postit {
-            background-color: #fefce8;
-            border: 1px solid #fef08a;
+        /* Estilo Realista de Post-it */
+        .sticky-note {
+            background: linear-gradient(135deg, #fef9c3 0%, #fde047 100%);
+            border: 1px solid #facc15;
+            font-family: 'Kalam', cursive;
             color: #854d0e;
+            box-shadow: 2px 4px 6px rgba(0,0,0,0.1);
         }
         .embedded-postit textarea {
             background-color: transparent;
@@ -221,6 +226,31 @@
         </main>
     </div>
 
+    <!-- Modal Meus Post-its (Geral) -->
+    <div id="postits-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-xl w-full max-w-md h-[70vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm uppercase tracking-wide">
+                    <span class="text-yellow-500 text-lg">●</span> Notas Pessoais
+                </h3>
+                <button onclick="document.getElementById('postits-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="postits-list" class="flex-1 overflow-y-auto p-5 space-y-3 bg-slate-50/50">
+                <!-- Notas via JS -->
+            </div>
+            <div class="p-4 border-t border-slate-100 bg-white">
+                <div class="flex gap-2">
+                    <input type="text" id="new-postit-input" placeholder="Digite uma anotação..." class="flex-1 rounded-lg border-slate-200 text-sm px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors bg-slate-50">
+                    <button id="add-postit-btn" class="bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-4 py-2 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, getDoc, updateDoc, query, where, getDocs, addDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -248,6 +278,7 @@
         const accessError = document.getElementById('access-error');
         const loadingSpinner = document.getElementById('loading-spinner');
         const ordersContainer = document.getElementById('orders-container');
+        const sellerNameDisplay = document.getElementById('seller-name-display');
         const sellerGreeting = document.getElementById('seller-greeting');
         const progressBar = document.getElementById('progress-bar');
         const progressText = document.getElementById('progress-text');
@@ -262,6 +293,11 @@
         const adminAuthError = document.getElementById('admin-auth-error');
         const confirmAdminAuthBtn = document.getElementById('confirm-admin-auth-btn');
 
+        // Post-it Elements
+        const postitsList = document.getElementById('postits-list');
+        const newPostitInput = document.getElementById('new-postit-input');
+        const addPostitBtn = document.getElementById('add-postit-btn');
+
         // State
         let currentSessionId = null;
         let currentSellerId = null;
@@ -269,7 +305,8 @@
         let sellerDocUnsubscribe = null;
         let pendingDischargeOrderId = null; 
         let sellerChartInstance = null;
-        let hasCelebrated = false; // Flag para evitar confetti repetido
+        let hasCelebrated = false; 
+        let postitsUnsubscribe = null;
 
         // Options
         const FEEDBACK_OPTIONS = {
@@ -329,7 +366,6 @@
             
             const fullName = currentSellerData.originalName || "Vendedor";
             const firstName = fullName.split(' ')[0];
-            // SAUDAÇÃO PERSONALIZADA
             sellerGreeting.textContent = `Olá, ${firstName}!`;
 
             // Listener Dados
@@ -341,6 +377,13 @@
                     renderOrders(samples, currentSellerData.sinalizedOrders || [], currentSellerData.orderNotes || {});
                     updateChart(samples);
                 }
+            });
+
+            // Listener Meus Post-its (Geral)
+            const postitsRef = collection(docRef, "private_notes");
+            const qPostits = query(postitsRef, orderBy("createdAt", "desc"));
+            postitsUnsubscribe = onSnapshot(qPostits, (snapshot) => {
+                renderPostits(snapshot.docs);
             });
         }
 
@@ -420,7 +463,6 @@
             progressBar.style.width = `${pct}%`;
             progressText.textContent = `${pct}%`;
 
-            // CELEBRAÇÃO 100%
             if (pct === 100 && totalItems > 0 && !hasCelebrated) {
                 hasCelebrated = true;
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
@@ -467,17 +509,15 @@
                     statusBadge = `<span class="bg-yellow-50 text-yellow-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">${order.pendingCount} Pendentes</span>`;
                 }
 
-                // Footer Logic
                 let footerHtml = '';
                 if (isOrderDischarged) {
                     footerHtml = `<div class="bg-pink-50/50 border-t border-pink-100 p-3 flex justify-center text-pink-700 font-bold text-xs uppercase tracking-wide gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Pedido Finalizado e Baixado</div>`;
                 } else if (isFullyComplete) {
-                    footerHtml = `<div class="bg-slate-50 border-t border-slate-100 p-3 flex justify-between items-center"><span class="text-[10px] text-slate-400 font-medium">Todos os itens respondidos.</span><div class="flex gap-2"><button class="signal-btn bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition-all flex items-center gap-2" data-order-id="${order.id}" onclick="notifyManager(event, '${order.id}')"><span>Notificar</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg></button><button class="bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition-all flex items-center gap-2" onclick="openAdminAuth(event, '${order.id}')"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>Baixa (Admin)</button></div></div>`;
+                    footerHtml = `<div class="bg-slate-50 border-t border-slate-100 p-3 flex justify-between items-center"><span class="text-[10px] text-slate-400 font-medium">Todos os itens respondidos.</span><div class="flex gap-2"><button class="signal-btn bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition-all flex items-center gap-2" data-order-id="${order.id}" onclick="notifyManager(event, '${order.id}')"><span>Notificar</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg></button><button class="admin-discharge-btn bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition-all flex items-center gap-2" data-order-id="${order.id}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>Baixa (Admin)</button></div></div>`;
                 } else {
                     footerHtml = `<div class="bg-slate-50 border-t border-slate-100 p-3 text-center"><span class="text-[10px] text-slate-400 font-medium">Complete todos os itens para liberar a baixa.</span></div>`;
                 }
 
-                // Note Icon Color
                 const noteIconClass = hasNote ? 'text-yellow-500 fill-yellow-100' : 'text-slate-300 hover:text-slate-500';
 
                 const card = document.createElement('div');
@@ -501,15 +541,17 @@
                     </div>
                     
                     <div id="content-${order.id}" class="order-content bg-white">
-                        <!-- Seção de Nota (Post-it) com Botões Check e Lixeira -->
+                        <!-- Post-it Incorporado com Botões Visíveis -->
                         <div id="note-section-${order.id}" class="note-section bg-yellow-50 border-b border-yellow-100 px-5 py-4 ${hasNote ? 'block' : 'hidden'}">
                             <div class="sticky-note p-3 shadow-md relative">
                                 <textarea id="note-input-${order.id}" rows="2" class="w-full bg-transparent text-sm text-yellow-900 placeholder-yellow-700/50 focus:outline-none resize-none font-medium leading-relaxed" placeholder="Escreva um lembrete para este pedido...">${noteText}</textarea>
                                 <div class="flex justify-end mt-2 gap-2">
-                                    <button class="bg-red-100 hover:bg-red-200 text-red-600 p-1.5 rounded-lg transition-colors" onclick="deleteOrderNote('${order.id}')" title="Excluir Nota">
+                                    <!-- Botão Excluir (Vermelho) -->
+                                    <button class="bg-red-100 hover:bg-red-200 text-red-600 p-2 rounded-lg transition-colors shadow-sm" onclick="deleteOrderNote('${order.id}')" title="Excluir Nota">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
-                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 p-1.5 rounded-lg transition-colors" onclick="saveOrderNote('${order.id}')" title="Salvar Nota">
+                                    <!-- Botão Salvar (Verde) -->
+                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 p-2 rounded-lg transition-colors shadow-sm" onclick="saveOrderNote('${order.id}')" title="Salvar Nota">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                     </button>
                                 </div>
@@ -526,7 +568,6 @@
                 ordersContainer.appendChild(card);
             });
 
-            // Listeners
             attachListeners();
         }
 
@@ -624,6 +665,18 @@
                     deleteItem(e.currentTarget.dataset.id);
                 });
             });
+            document.querySelectorAll('.admin-discharge-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openAdminAuth(e, e.currentTarget.dataset.orderId);
+                });
+            });
+            document.querySelectorAll('.signal-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    notifyManager(e, e.currentTarget.dataset.orderId);
+                });
+            });
         }
 
         // --- NOTE LOGIC ---
@@ -657,7 +710,7 @@
             try {
                 const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
                 const updateData = {};
-                updateData[`orderNotes.${orderId}`] = ""; // Limpa a nota
+                updateData[`orderNotes.${orderId}`] = ""; 
                 await updateDoc(sellerRef, updateData);
                 document.getElementById(`note-input-${orderId}`).value = "";
                 showToast('Nota excluída!', 'text-slate-500');
@@ -807,6 +860,46 @@
             } catch (error) { console.error(error); }
         }
 
+        // Post-its Logic (Modal List)
+        function renderPostits(docs) {
+            postitsList.innerHTML = '';
+            if (docs.length === 0) {
+                postitsList.innerHTML = '<p class="text-center text-slate-400 text-xs mt-10 italic">Nenhuma anotação.</p>';
+                return;
+            }
+            docs.forEach(docSnap => {
+                const note = docSnap.data();
+                const div = document.createElement('div');
+                div.className = 'postit-note p-3 rounded-lg relative group transition-transform hover:scale-[1.02] cursor-default';
+                // *** CORREÇÃO: Removemos opacidade do botão para mobile ***
+                div.innerHTML = `
+                    <p class="text-yellow-900 text-xs font-medium whitespace-pre-wrap leading-relaxed">${note.text}</p>
+                    <button class="absolute -top-2 -right-2 bg-white text-red-400 hover:text-red-600 rounded-full p-1 shadow-sm delete-note-btn" data-id="${docSnap.id}">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                `;
+                postitsList.appendChild(div);
+            });
+
+            document.querySelectorAll('.delete-note-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    await deleteDoc(doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId, "private_notes", id));
+                });
+            });
+        }
+
+        addPostitBtn.addEventListener('click', async () => {
+            const text = newPostitInput.value.trim();
+            if(!text) return;
+            newPostitInput.value = '';
+            await addDoc(collection(db, "sessoes", currentSessionId, "vendedores", currentSellerId, "private_notes"), {
+                text: text,
+                createdAt: serverTimestamp()
+            });
+        });
+
+        // UI Helpers
         window.toggleOrder = (orderId) => {
             const content = document.getElementById(`content-${orderId}`);
             const chevron = document.getElementById(`chevron-${orderId}`);
@@ -825,6 +918,7 @@
         logoutBtn.addEventListener('click', () => {
             localStorage.removeItem('sellerAccessCode');
             if(sellerDocUnsubscribe) sellerDocUnsubscribe();
+            if(postitsUnsubscribe) postitsUnsubscribe();
             location.reload();
         });
 
