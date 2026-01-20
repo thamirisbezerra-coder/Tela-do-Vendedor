@@ -93,6 +93,18 @@
         .fade-in-scale {
             animation: fadeInScale 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        /* Animação de Piscar para o Item (Novo) */
+        @keyframes blinkingBg {
+            0% { background-color: rgba(99, 102, 241, 0.05); box-shadow: 0 0 0 0px rgba(99, 102, 241, 0); }
+            50% { background-color: rgba(99, 102, 241, 0.2); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3); }
+            100% { background-color: rgba(99, 102, 241, 0.05); box-shadow: 0 0 0 0px rgba(99, 102, 241, 0); }
+        }
+        .blinking-target {
+            animation: blinkingBg 1.5s infinite;
+            border-radius: 0.5rem;
+            z-index: 10;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -214,7 +226,7 @@
                 <button id="notif-btn" class="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors relative" onclick="toggleNotifications(true)">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                     <!-- Badge de contador -->
-                    <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full hidden"></span>
+                    <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full hidden animate-bounce"></span>
                 </button>
 
                 <!-- Botão Notas Pessoais (Lápis) -->
@@ -524,43 +536,56 @@
 
         window.goToItem = async (e, orderId, productName, notificationId) => {
             e.stopPropagation();
-            toggleNotifications(false); 
+            toggleNotifications(false); // Fecha a modal
 
+            // Marca como lido no Firestore
             try {
                 const notifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", notificationId);
                 await updateDoc(notifRef, { read: true });
             } catch(err) { console.error("Error marking read", err); }
 
+            // Encontra o Container do Pedido
             const content = document.getElementById(`content-${orderId}`);
             if (!content) {
-                showToast("Pedido não encontrado na tela.", "text-red-400");
+                showToast("Pedido não encontrado na lista atual.", "text-red-400");
                 return;
             }
 
+            // Abre o Acordeão se estiver fechado
             if (!content.classList.contains('open')) {
                 toggleOrder(orderId);
             }
 
+            // Aguarda a animação do acordeão (500ms) para então rolar
             setTimeout(() => {
                 const productElements = content.querySelectorAll('h4');
                 let targetEl = null;
+                // Normaliza o texto para comparação segura
+                const cleanName = (str) => str.trim().toLowerCase();
+                const targetName = cleanName(productName);
+
                 for (let el of productElements) {
-                    if (el.textContent.trim() === productName) {
-                        targetEl = el.closest('.relative'); 
+                    if (cleanName(el.textContent) === targetName) {
+                        targetEl = el.closest('.relative'); // O container do item
                         break;
                     }
                 }
 
                 if (targetEl) {
+                    // Rola até o item
                     targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    targetEl.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-50', 'item-highlight');
+                    
+                    // Aplica o efeito de piscar
+                    targetEl.classList.add('blinking-target');
+                    
+                    // Remove o efeito após 5 segundos
                     setTimeout(() => {
-                        targetEl.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-50', 'item-highlight');
-                    }, 3000);
+                        targetEl.classList.remove('blinking-target');
+                    }, 5000);
                 } else {
-                     showToast("Item não encontrado no pedido.", "text-yellow-500");
+                     showToast("Item não encontrado dentro do pedido.", "text-yellow-500");
                 }
-            }, 300);
+            }, 500);
         };
 
         window.openSellerReplyModal = (e, notificationId, message) => {
@@ -1141,6 +1166,7 @@
     </script>
 </body>
 </html>
+
 
 
 
