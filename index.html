@@ -34,14 +34,14 @@
             opacity: 1;
         }
         
-        /* Note Section Animation - Aumentei a altura máxima */
+        /* Note Section Animation */
         .note-section {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease;
         }
         .note-section.open {
-            max-height: 500px; /* Aumentado para garantir visibilidade */
+            max-height: 500px; 
         }
 
         .chevron { transition: transform 0.3s ease; }
@@ -72,12 +72,12 @@
             color: #854d0e;
             box-shadow: 2px 4px 6px rgba(0,0,0,0.1);
         }
-        .embedded-postit textarea {
+        .sticky-note textarea {
             background-color: transparent;
             border: none;
             resize: none;
         }
-        .embedded-postit textarea:focus {
+        .sticky-note textarea:focus {
             box-shadow: none;
             outline: none;
         }
@@ -213,7 +213,7 @@
                             <ul class="text-xs text-slate-600 space-y-1.5 list-disc pl-4 marker:text-blue-400">
                                 <li>Pedidos respondidos anteriormente como <strong>pendentes</strong> entram neste novo relatório para atualização.</li>
                                 <li><strong>Comentários são fundamentais</strong>, principalmente nas reprovações.</li>
-                                <li>Use o ícone de <strong>Nota</strong> no pedido para lembretes pessoais.</li>
+                                <li>Use o ícone de <strong>Nota</strong> no pedido para lembretes pessoais (visível apenas para você).</li>
                             </ul>
                         </div>
                     </div>
@@ -253,7 +253,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, getDoc, updateDoc, query, where, getDocs, addDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, getDoc, updateDoc, query, where, getDocs, addDoc, deleteDoc, serverTimestamp, setDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -541,18 +541,21 @@
                     </div>
                     
                     <div id="content-${order.id}" class="order-content bg-white">
-                        <!-- Post-it Incorporado com Botões Visíveis -->
+                        <!-- Seção de Nota (Post-it) com Botões Texto -->
                         <div id="note-section-${order.id}" class="note-section bg-yellow-50 border-b border-yellow-100 px-5 py-4 ${hasNote ? 'block' : 'hidden'}">
                             <div class="sticky-note p-3 shadow-md relative">
-                                <textarea id="note-input-${order.id}" rows="2" class="w-full bg-transparent text-sm text-yellow-900 placeholder-yellow-700/50 focus:outline-none resize-none font-medium leading-relaxed" placeholder="Escreva um lembrete para este pedido...">${noteText}</textarea>
+                                <span class="text-[10px] text-yellow-800/60 font-bold uppercase mb-1 block">Lembrete Pessoal (Privado)</span>
+                                <textarea id="note-input-${order.id}" rows="2" class="w-full bg-transparent text-sm text-yellow-900 placeholder-yellow-700/50 focus:outline-none resize-none font-medium leading-relaxed" placeholder="Escreva um lembrete pessoal para este pedido (apenas você vê)...">${noteText}</textarea>
                                 <div class="flex justify-end mt-2 gap-2">
-                                    <!-- Botão Excluir (Vermelho) -->
-                                    <button class="bg-red-100 hover:bg-red-200 text-red-600 p-2 rounded-lg transition-colors shadow-sm" onclick="deleteOrderNote('${order.id}')" title="Excluir Nota">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    <!-- Botão Excluir -->
+                                    <button class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold py-1.5 px-3 rounded-lg transition-colors shadow-sm flex items-center gap-1" onclick="deleteOrderNote('${order.id}')" title="Excluir Nota">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        Excluir
                                     </button>
-                                    <!-- Botão Salvar (Verde) -->
-                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 p-2 rounded-lg transition-colors shadow-sm" onclick="saveOrderNote('${order.id}')" title="Salvar Nota">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <!-- Botão Salvar -->
+                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 text-xs font-bold py-1.5 px-3 rounded-lg transition-colors shadow-sm flex items-center gap-1" onclick="saveOrderNote('${order.id}')" title="Salvar Nota">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                        Salvar
                                     </button>
                                 </div>
                             </div>
@@ -695,9 +698,9 @@
             const text = document.getElementById(`note-input-${orderId}`).value;
             try {
                 const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
-                const updateData = {};
-                updateData[`orderNotes.${orderId}`] = text;
-                await updateDoc(sellerRef, updateData);
+                const data = { orderNotes: {} };
+                data.orderNotes[orderId] = text;
+                await setDoc(sellerRef, data, { merge: true });
                 showToast('Lembrete salvo!', 'text-yellow-600');
             } catch (e) {
                 console.error(e);
@@ -706,14 +709,14 @@
         };
 
         window.deleteOrderNote = async (orderId) => {
-            if(!confirm("Excluir esta nota?")) return;
+            if(!confirm("Limpar nota?")) return;
             try {
                 const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
                 const updateData = {};
-                updateData[`orderNotes.${orderId}`] = ""; 
+                updateData[`orderNotes.${orderId}`] = deleteField();
                 await updateDoc(sellerRef, updateData);
                 document.getElementById(`note-input-${orderId}`).value = "";
-                showToast('Nota excluída!', 'text-slate-500');
+                showToast('Nota limpa!', 'text-slate-500');
             } catch (e) {
                 console.error(e);
                 showToast('Erro ao excluir', 'text-red-400');
@@ -847,59 +850,6 @@
             }
         }
 
-        async function deleteItem(itemId) {
-            if(!confirm("Limpar esta resposta?")) return;
-            try {
-                const updatedSamples = currentSellerData.amostras.map(s => {
-                    if (s.id === itemId) return { ...s, feedback: "", observation: "", isPending: true, lastUpdate: new Date() };
-                    return s;
-                });
-                const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
-                await updateDoc(sellerRef, { amostras: updatedSamples });
-                showToast('Resposta limpa', 'text-slate-400');
-            } catch (error) { console.error(error); }
-        }
-
-        // Post-its Logic (Modal List)
-        function renderPostits(docs) {
-            postitsList.innerHTML = '';
-            if (docs.length === 0) {
-                postitsList.innerHTML = '<p class="text-center text-slate-400 text-xs mt-10 italic">Nenhuma anotação.</p>';
-                return;
-            }
-            docs.forEach(docSnap => {
-                const note = docSnap.data();
-                const div = document.createElement('div');
-                div.className = 'postit-note p-3 rounded-lg relative group transition-transform hover:scale-[1.02] cursor-default';
-                // *** CORREÇÃO: Removemos opacidade do botão para mobile ***
-                div.innerHTML = `
-                    <p class="text-yellow-900 text-xs font-medium whitespace-pre-wrap leading-relaxed">${note.text}</p>
-                    <button class="absolute -top-2 -right-2 bg-white text-red-400 hover:text-red-600 rounded-full p-1 shadow-sm delete-note-btn" data-id="${docSnap.id}">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                `;
-                postitsList.appendChild(div);
-            });
-
-            document.querySelectorAll('.delete-note-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const id = e.currentTarget.dataset.id;
-                    await deleteDoc(doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId, "private_notes", id));
-                });
-            });
-        }
-
-        addPostitBtn.addEventListener('click', async () => {
-            const text = newPostitInput.value.trim();
-            if(!text) return;
-            newPostitInput.value = '';
-            await addDoc(collection(db, "sessoes", currentSessionId, "vendedores", currentSellerId, "private_notes"), {
-                text: text,
-                createdAt: serverTimestamp()
-            });
-        });
-
-        // UI Helpers
         window.toggleOrder = (orderId) => {
             const content = document.getElementById(`content-${orderId}`);
             const chevron = document.getElementById(`chevron-${orderId}`);
@@ -918,13 +868,13 @@
         logoutBtn.addEventListener('click', () => {
             localStorage.removeItem('sellerAccessCode');
             if(sellerDocUnsubscribe) sellerDocUnsubscribe();
-            if(postitsUnsubscribe) postitsUnsubscribe();
             location.reload();
         });
 
     </script>
 </body>
 </html>
+
 
 
 
