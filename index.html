@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Portal do Vendedor</title>
+    <title>Painel de Feedbacks</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -34,7 +34,6 @@
             opacity: 1;
         }
         
-        /* Note Section Animation */
         .note-section {
             max-height: 0;
             overflow: hidden;
@@ -56,7 +55,6 @@
             border-color: #6366f1;
         }
 
-        /* Estilo para Pedido Baixado (Rosa Claro) */
         .order-discharged {
             background-color: #fff1f2 !important; /* Rose-50 */
             border-color: #fda4af !important; /* Rose-300 */
@@ -64,22 +62,36 @@
         .order-discharged .chevron { color: #be123c !important; }
         .order-discharged h3 { color: #881337 !important; }
         
-        /* Estilo Realista de Post-it */
-        .sticky-note {
-            background: linear-gradient(135deg, #fef9c3 0%, #fde047 100%);
-            border: 1px solid #facc15;
-            font-family: 'Kalam', cursive;
+        .embedded-postit {
+            background-color: #fefce8;
+            border: 1px solid #fef08a;
             color: #854d0e;
-            box-shadow: 2px 4px 6px rgba(0,0,0,0.1);
         }
-        .sticky-note textarea {
+        .embedded-postit textarea {
             background-color: transparent;
             border: none;
             resize: none;
         }
-        .sticky-note textarea:focus {
+        .embedded-postit textarea:focus {
             box-shadow: none;
             outline: none;
+        }
+
+        /* Animações Personalizadas */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .fade-in-scale {
+            animation: fadeInScale 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
     </style>
 </head>
@@ -91,7 +103,7 @@
         <span id="toast-msg" class="font-medium text-sm">Operação realizada</span>
     </div>
 
-    <!-- Modal de Celebração (Obrigado) -->
+    <!-- Modal de Celebração -->
     <div id="celebration-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4 transition-opacity">
         <div class="bg-white rounded-2xl w-full max-w-sm p-8 shadow-2xl transform transition-all scale-100 text-center relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
@@ -106,6 +118,34 @@
             <button onclick="document.getElementById('celebration-modal').classList.add('hidden')" class="bg-slate-900 hover:bg-black text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95 w-full">
                 Fechar
             </button>
+        </div>
+    </div>
+
+    <!-- Modal Notificações -->
+    <div id="notifications-modal" class="fixed inset-0 bg-slate-900/20 z-40 hidden" onclick="toggleNotifications(false)">
+        <div class="absolute top-16 right-4 w-80 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[500px]" onclick="event.stopPropagation()">
+            <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                <h3 class="font-bold text-slate-700 text-sm">Notificações</h3>
+                <button onclick="toggleNotifications(false)" class="text-slate-400 hover:text-slate-600">&times;</button>
+            </div>
+            <div id="notification-list-container" class="flex-1 overflow-y-auto p-0">
+                <p class="text-center text-slate-400 text-xs py-8">Nenhuma notificação.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resposta ao Gestor -->
+    <div id="seller-reply-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-xl w-full max-w-md p-6 shadow-2xl">
+            <h3 class="font-bold text-slate-800 text-lg mb-2">Responder ao Gestor</h3>
+            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 text-sm text-slate-600 italic" id="manager-msg-preview">
+                "Mensagem do gestor..."
+            </div>
+            <textarea id="seller-reply-input" rows="3" class="w-full border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4 resize-none" placeholder="Sua resposta..."></textarea>
+            <div class="flex justify-end gap-2">
+                <button onclick="document.getElementById('seller-reply-modal').classList.add('hidden')" class="text-slate-500 text-sm font-medium px-4 py-2 hover:bg-slate-50 rounded-lg">Cancelar</button>
+                <button id="send-seller-reply-btn" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition-colors">Enviar</button>
+            </div>
         </div>
     </div>
 
@@ -128,23 +168,24 @@
         </div>
     </div>
 
-    <!-- TELA DE LOGIN -->
-    <div id="access-view" class="fixed inset-0 z-40 bg-white flex items-center justify-center p-6">
-        <div class="w-full max-w-sm text-center">
-            <div class="mb-12">
-                <img src="https://i.postimg.cc/76mXWMJh/as-02.png" alt="Logo" class="h-24 w-auto mx-auto mb-8 object-contain drop-shadow-sm">
-                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Portal Corporativo</h1>
-                <p class="text-slate-500 text-sm mt-2">Acesse seus pedidos e feedbacks</p>
+    <!-- TELA DE LOGIN (Atualizada) -->
+    <div id="access-view" class="fixed inset-0 z-40 bg-white flex items-center justify-center p-6 bg-gradient-to-b from-slate-50 to-white">
+        <div class="w-full max-w-sm text-center fade-in-scale">
+            <div class="mb-12 relative">
+                <!-- Animação na Logo -->
+                <img src="https://i.postimg.cc/76mXWMJh/as-02.png" alt="Logo" class="h-28 w-auto mx-auto mb-6 object-contain drop-shadow-md animate-float">
+                <h1 class="text-2xl font-bold text-slate-800 tracking-tight leading-snug">Painel de Feedbacks<br>de Amostras</h1>
+                <p class="text-slate-500 text-sm mt-3">Acesse para registrar suas avaliações.</p>
             </div>
             
             <div class="space-y-6">
                 <div class="relative group">
-                    <input type="tel" id="access-code-input" placeholder=" " maxlength="6" class="peer w-full border-b-2 border-slate-200 py-3 text-center text-3xl font-mono font-medium text-slate-800 focus:border-indigo-600 focus:outline-none bg-transparent tracking-[0.5em] transition-colors">
-                    <label class="absolute left-1/2 -translate-x-1/2 -top-3 text-xs font-semibold text-slate-400 uppercase tracking-wider transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-slate-300 peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600">Código de Acesso</label>
+                    <input type="tel" id="access-code-input" placeholder=" " maxlength="6" class="peer w-full border-b-2 border-slate-300 py-3 text-center text-3xl font-mono font-medium text-slate-800 focus:border-indigo-600 focus:outline-none bg-transparent tracking-[0.5em] transition-colors">
+                    <label class="absolute left-1/2 -translate-x-1/2 -top-3 text-xs font-semibold text-slate-400 uppercase tracking-wider transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-slate-400 peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600">Código de Acesso</label>
                 </div>
                 
-                <button id="load-data-btn" class="w-full bg-slate-900 text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-xl hover:bg-black transition-all transform active:scale-[0.99]">
-                    Acessar Painel
+                <button id="load-data-btn" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all transform active:scale-[0.98]">
+                    Entrar no Painel
                 </button>
             </div>
             
@@ -159,17 +200,28 @@
     <div id="dashboard-view" class="hidden flex-col h-screen overflow-hidden bg-slate-100">
         
         <!-- Navbar -->
-        <header class="bg-white border-b border-slate-200 px-6 py-3 shadow-sm z-30 flex justify-between items-center">
+        <header class="bg-white border-b border-slate-200 px-6 py-3 shadow-sm z-30 flex justify-between items-center relative">
             <div class="flex items-center gap-4">
                 <img src="https://i.postimg.cc/76mXWMJh/as-02.png" alt="Logo" class="h-8 w-auto object-contain">
                 <div class="h-6 w-px bg-slate-200"></div>
                 <div>
-                    <!-- Saudação Atualizada -->
                     <h2 id="seller-greeting" class="font-bold text-slate-800 text-sm leading-tight">Olá, Vendedor!</h2>
                     <p class="text-[10px] text-slate-500 font-medium tracking-wide">Um excelente trabalho hoje!</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
+                <!-- Botão de Notificação (Sino) -->
+                <button id="notif-btn" class="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors relative" onclick="toggleNotifications(true)">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    <!-- Badge de contador -->
+                    <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full hidden"></span>
+                </button>
+
+                <!-- Botão Notas Pessoais (Lápis) -->
+                <button onclick="document.getElementById('postits-modal').classList.remove('hidden')" class="p-2.5 text-slate-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors" title="Notas">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                </button>
+                <div class="h-6 w-px bg-slate-200 mx-1"></div>
                 <button id="logout-btn" class="p-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Sair">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 </button>
@@ -213,7 +265,7 @@
                             <ul class="text-xs text-slate-600 space-y-1.5 list-disc pl-4 marker:text-blue-400">
                                 <li>Pedidos respondidos anteriormente como <strong>pendentes</strong> entram neste novo relatório para atualização.</li>
                                 <li><strong>Comentários são fundamentais</strong>, principalmente nas reprovações.</li>
-                                <li>Use o ícone de <strong>Nota</strong> no pedido para lembretes pessoais (visível apenas para você).</li>
+                                <li>Use o ícone de <strong>Nota</strong> no pedido para lembretes pessoais.</li>
                             </ul>
                         </div>
                     </div>
@@ -226,7 +278,7 @@
         </main>
     </div>
 
-    <!-- Modal Meus Post-its (Geral) -->
+    <!-- Modal Meus Post-its (Geral - Lápis Superior) -->
     <div id="postits-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
         <div class="bg-white rounded-xl w-full max-w-md h-[70vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
             <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -244,7 +296,8 @@
                 <div class="flex gap-2">
                     <input type="text" id="new-postit-input" placeholder="Digite uma anotação..." class="flex-1 rounded-lg border-slate-200 text-sm px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors bg-slate-50">
                     <button id="add-postit-btn" class="bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-4 py-2 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <!-- Icone de Enviar/Check -->
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     </button>
                 </div>
             </div>
@@ -286,6 +339,13 @@
         const toast = document.getElementById('toast');
         const toastMsg = document.getElementById('toast-msg');
         const celebrationModal = document.getElementById('celebration-modal');
+        const notificationsModal = document.getElementById('notifications-modal');
+        const notifBadge = document.getElementById('notif-badge');
+        const notificationListContainer = document.getElementById('notification-list-container');
+        const sellerReplyModal = document.getElementById('seller-reply-modal');
+        const managerMsgPreview = document.getElementById('manager-msg-preview');
+        const sellerReplyInput = document.getElementById('seller-reply-input');
+        const sendSellerReplyBtn = document.getElementById('send-seller-reply-btn');
         
         // Admin Auth Elements
         const adminAuthModal = document.getElementById('admin-auth-modal');
@@ -307,6 +367,8 @@
         let sellerChartInstance = null;
         let hasCelebrated = false; 
         let postitsUnsubscribe = null;
+        let managerNotificationsUnsubscribe = null;
+        let currentReplyContext = null; 
 
         // Options
         const FEEDBACK_OPTIONS = {
@@ -385,7 +447,162 @@
             postitsUnsubscribe = onSnapshot(qPostits, (snapshot) => {
                 renderPostits(snapshot.docs);
             });
+
+            // Listen for Manager Notifications
+            listenForManagerNotifications();
         }
+
+        function listenForManagerNotifications() {
+            const q = query(
+                collection(db, "sessoes", currentSessionId, "notificacoesVendedor"),
+                where("sellerName", "==", currentSellerData.originalName)
+            );
+            
+            managerNotificationsUnsubscribe = onSnapshot(q, (snapshot) => {
+                const notifications = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                notifications.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                
+                const unreadCount = notifications.filter(n => !n.read).length;
+                
+                if (unreadCount > 0) {
+                    notifBadge.classList.remove('hidden');
+                } else {
+                    notifBadge.classList.add('hidden');
+                }
+
+                renderNotifications(notifications);
+            });
+        }
+
+        function renderNotifications(notifications) {
+            notificationListContainer.innerHTML = '';
+            if (notifications.length === 0) {
+                notificationListContainer.innerHTML = '<p class="text-center text-slate-400 text-xs py-8">Nenhuma notificação.</p>';
+                return;
+            }
+
+            notifications.forEach(notif => {
+                const div = document.createElement('div');
+                const isRead = notif.read ? 'opacity-70 bg-white' : 'bg-blue-50';
+                div.className = `p-4 border-b border-slate-100 ${isRead} hover:bg-slate-50 transition-colors cursor-pointer`;
+                
+                let timeStr = "";
+                if(notif.timestamp) {
+                    const d = notif.timestamp.toDate();
+                    timeStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="font-bold text-slate-700 text-xs">${notif.managerName || 'Gestor'}</span>
+                        <span class="text-[10px] text-slate-400">${timeStr}</span>
+                    </div>
+                    <p class="text-xs text-slate-600 mb-2">"${notif.replyMessage}"</p>
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded truncate max-w-[120px]">${notif.produto}</span>
+                        <div class="flex gap-2">
+                            <button class="text-xs text-blue-600 font-bold hover:underline" onclick="goToItem(event, '${notif.pedido}', '${notif.produto}', '${notif.id}')">
+                                Ver no Pedido
+                            </button>
+                            <button class="text-xs text-green-600 font-bold hover:underline" onclick="openSellerReplyModal(event, '${notif.id}', '${notif.replyMessage}')">
+                                Responder
+                            </button>
+                        </div>
+                    </div>
+                `;
+                notificationListContainer.appendChild(div);
+            });
+        }
+
+        window.toggleNotifications = (show) => {
+            if(show) {
+                notificationsModal.classList.remove('hidden');
+            } else {
+                notificationsModal.classList.add('hidden');
+            }
+        };
+
+        window.goToItem = async (e, orderId, productName, notificationId) => {
+            e.stopPropagation();
+            toggleNotifications(false); 
+
+            try {
+                const notifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", notificationId);
+                await updateDoc(notifRef, { read: true });
+            } catch(err) { console.error("Error marking read", err); }
+
+            const content = document.getElementById(`content-${orderId}`);
+            if (!content) {
+                showToast("Pedido não encontrado na tela.", "text-red-400");
+                return;
+            }
+
+            if (!content.classList.contains('open')) {
+                toggleOrder(orderId);
+            }
+
+            setTimeout(() => {
+                const productElements = content.querySelectorAll('h4');
+                let targetEl = null;
+                for (let el of productElements) {
+                    if (el.textContent.trim() === productName) {
+                        targetEl = el.closest('.relative'); 
+                        break;
+                    }
+                }
+
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    targetEl.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-50', 'item-highlight');
+                    setTimeout(() => {
+                        targetEl.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-50', 'item-highlight');
+                    }, 3000);
+                } else {
+                     showToast("Item não encontrado no pedido.", "text-yellow-500");
+                }
+            }, 300);
+        };
+
+        window.openSellerReplyModal = (e, notificationId, message) => {
+            e.stopPropagation();
+            toggleNotifications(false);
+            currentReplyContext = { notificationId, message };
+            managerMsgPreview.textContent = `"${message}"`;
+            sellerReplyInput.value = '';
+            sellerReplyModal.classList.remove('hidden');
+        };
+
+        sendSellerReplyBtn.addEventListener('click', async () => {
+            const replyText = sellerReplyInput.value.trim();
+            if(!replyText) return;
+
+            try {
+                const notifSnap = await getDoc(doc(db, "sessoes", currentSessionId, "notificacoesVendedor", currentReplyContext.notificationId));
+                if(!notifSnap.exists()) return;
+                const notifData = notifSnap.data();
+
+                await updateDoc(doc(db, "sessoes", currentSessionId, "notificacoesVendedor", currentReplyContext.notificationId), { read: true });
+
+                await addDoc(collection(db, "sessoes", currentSessionId, "respostasVendedor"), {
+                    sellerName: currentSellerData.originalName,
+                    originalManagerMessage: notifData.replyMessage,
+                    originalManagerName: notifData.managerName,
+                    replyMessage: replyText,
+                    pedido: notifData.pedido,
+                    produto: notifData.produto,
+                    timestamp: serverTimestamp(),
+                    readByManager: false
+                });
+
+                sellerReplyModal.classList.add('hidden');
+                showToast("Resposta enviada!", "text-green-500");
+
+            } catch (error) {
+                console.error("Error sending reply:", error);
+                showToast("Erro ao enviar.", "text-red-500");
+            }
+        });
+
 
         function updateChart(samples) {
             const ctx = document.getElementById('seller-chart');
@@ -513,7 +730,7 @@
                 if (isOrderDischarged) {
                     footerHtml = `<div class="bg-pink-50/50 border-t border-pink-100 p-3 flex justify-center text-pink-700 font-bold text-xs uppercase tracking-wide gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Pedido Finalizado e Baixado</div>`;
                 } else if (isFullyComplete) {
-                    footerHtml = `<div class="bg-slate-50 border-t border-slate-100 p-3 flex justify-between items-center"><span class="text-[10px] text-slate-400 font-medium">Todos os itens respondidos.</span><div class="flex gap-2"><button class="signal-btn bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition-all flex items-center gap-2" data-order-id="${order.id}" onclick="notifyManager(event, '${order.id}')"><span>Notificar</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg></button><button class="admin-discharge-btn bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition-all flex items-center gap-2" data-order-id="${order.id}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>Baixa (Admin)</button></div></div>`;
+                    footerHtml = `<div class="bg-slate-50 border-t border-slate-100 p-3 flex justify-between items-center"><span class="text-[10px] text-slate-400 font-medium">Todos os itens respondidos.</span><div class="flex gap-2"><button class="signal-btn bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition-all flex items-center gap-2" data-order-id="${order.id}"><span>Notificar</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg></button><button class="admin-discharge-btn bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition-all flex items-center gap-2" data-order-id="${order.id}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>Baixa (Admin)</button></div></div>`;
                 } else {
                     footerHtml = `<div class="bg-slate-50 border-t border-slate-100 p-3 text-center"><span class="text-[10px] text-slate-400 font-medium">Complete todos os itens para liberar a baixa.</span></div>`;
                 }
@@ -541,21 +758,17 @@
                     </div>
                     
                     <div id="content-${order.id}" class="order-content bg-white">
-                        <!-- Seção de Nota (Post-it) com Botões Texto -->
+                        <!-- Seção de Nota (Post-it) com Botões Check e Lixeira -->
                         <div id="note-section-${order.id}" class="note-section bg-yellow-50 border-b border-yellow-100 px-5 py-4 ${hasNote ? 'block' : 'hidden'}">
                             <div class="sticky-note p-3 shadow-md relative">
                                 <span class="text-[10px] text-yellow-800/60 font-bold uppercase mb-1 block">Lembrete Pessoal (Privado)</span>
                                 <textarea id="note-input-${order.id}" rows="2" class="w-full bg-transparent text-sm text-yellow-900 placeholder-yellow-700/50 focus:outline-none resize-none font-medium leading-relaxed" placeholder="Escreva um lembrete pessoal para este pedido (apenas você vê)...">${noteText}</textarea>
                                 <div class="flex justify-end mt-2 gap-2">
-                                    <!-- Botão Excluir -->
-                                    <button class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold py-1.5 px-3 rounded-lg transition-colors shadow-sm flex items-center gap-1" onclick="deleteOrderNote('${order.id}')" title="Excluir Nota">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                        Excluir
+                                    <button class="bg-red-100 hover:bg-red-200 text-red-600 p-2 rounded-lg transition-colors shadow-sm" onclick="deleteOrderNote('${order.id}')" title="Excluir Nota">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
-                                    <!-- Botão Salvar -->
-                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 text-xs font-bold py-1.5 px-3 rounded-lg transition-colors shadow-sm flex items-center gap-1" onclick="saveOrderNote('${order.id}')" title="Salvar Nota">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                        Salvar
+                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 p-2 rounded-lg transition-colors shadow-sm" onclick="saveOrderNote('${order.id}')" title="Salvar Nota">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                                     </button>
                                 </div>
                             </div>
@@ -709,14 +922,14 @@
         };
 
         window.deleteOrderNote = async (orderId) => {
-            if(!confirm("Limpar nota?")) return;
+            if(!confirm("Excluir esta nota?")) return;
             try {
                 const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
                 const updateData = {};
                 updateData[`orderNotes.${orderId}`] = deleteField();
                 await updateDoc(sellerRef, updateData);
                 document.getElementById(`note-input-${orderId}`).value = "";
-                showToast('Nota limpa!', 'text-slate-500');
+                showToast('Nota excluída!', 'text-slate-500');
             } catch (e) {
                 console.error(e);
                 showToast('Erro ao excluir', 'text-red-400');
@@ -850,6 +1063,59 @@
             }
         }
 
+        async function deleteItem(itemId) {
+            if(!confirm("Limpar esta resposta?")) return;
+            try {
+                const updatedSamples = currentSellerData.amostras.map(s => {
+                    if (s.id === itemId) return { ...s, feedback: "", observation: "", isPending: true, lastUpdate: new Date() };
+                    return s;
+                });
+                const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
+                await updateDoc(sellerRef, { amostras: updatedSamples });
+                showToast('Resposta limpa', 'text-slate-400');
+            } catch (error) { console.error(error); }
+        }
+
+        // Post-its Logic (Modal List)
+        function renderPostits(docs) {
+            postitsList.innerHTML = '';
+            if (docs.length === 0) {
+                postitsList.innerHTML = '<p class="text-center text-slate-400 text-xs mt-10 italic">Nenhuma anotação.</p>';
+                return;
+            }
+            docs.forEach(docSnap => {
+                const note = docSnap.data();
+                const div = document.createElement('div');
+                div.className = 'postit-note p-3 rounded-lg relative group transition-transform hover:scale-[1.02] cursor-default';
+                div.innerHTML = `
+                    <p class="text-yellow-900 text-xs font-medium whitespace-pre-wrap leading-relaxed">${note.text}</p>
+                    <button class="absolute -top-2 -right-2 bg-white text-red-400 hover:text-red-600 rounded-full p-1 shadow-sm delete-note-btn" data-id="${docSnap.id}">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                `;
+                postitsList.appendChild(div);
+            });
+
+            document.querySelectorAll('.delete-note-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    await deleteDoc(doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId, "private_notes", id));
+                });
+            });
+        }
+
+        addPostitBtn.addEventListener('click', async () => {
+            const text = newPostitInput.value.trim();
+            if(!text) return;
+            newPostitInput.value = '';
+            await addDoc(collection(db, "sessoes", currentSessionId, "vendedores", currentSellerId, "private_notes"), {
+                text: text,
+                createdAt: serverTimestamp()
+            });
+            showToast("Nota adicionada", "text-green-500");
+        });
+
+        // UI Helpers
         window.toggleOrder = (orderId) => {
             const content = document.getElementById(`content-${orderId}`);
             const chevron = document.getElementById(`chevron-${orderId}`);
@@ -868,6 +1134,7 @@
         logoutBtn.addEventListener('click', () => {
             localStorage.removeItem('sellerAccessCode');
             if(sellerDocUnsubscribe) sellerDocUnsubscribe();
+            if(postitsUnsubscribe) postitsUnsubscribe();
             location.reload();
         });
 
