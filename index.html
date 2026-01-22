@@ -2,1248 +2,1140 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel de Feedbacks</title>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Vendedor | Doremus</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <!-- Confetti -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #f1f5f9; 
-            color: #0f172a; 
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        .transition-all-300 { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        
-        .order-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-in-out, opacity 0.3s ease;
-            opacity: 0;
-        }
-        .order-content.open {
-            max-height: 5000px;
-            opacity: 1;
-        }
-        
-        .note-section {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-        .note-section.open {
-            max-height: 500px; 
-        }
-
-        .chevron { transition: transform 0.3s ease; }
-        .rotate-180 { transform: rotate(180deg); }
-
-        .form-select, .form-textarea {
-            background-image: none;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        }
-        .form-select:focus, .form-textarea:focus {
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-            border-color: #6366f1;
-        }
-
-        .order-discharged {
-            background-color: #fff1f2 !important; /* Rose-50 */
-            border-color: #fda4af !important; /* Rose-300 */
-        }
-        .order-discharged .chevron { color: #be123c !important; }
-        .order-discharged h3 { color: #881337 !important; }
-        
-        .embedded-postit {
-            background-color: #fefce8;
-            border: 1px solid #fef08a;
-            color: #854d0e;
-        }
-        .embedded-postit textarea {
-            background-color: transparent;
-            border: none;
-            resize: none;
-        }
-        .embedded-postit textarea:focus {
-            box-shadow: none;
-            outline: none;
-        }
-
-        /* Animações Personalizadas */
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        .animate-float {
-            animation: float 4s ease-in-out infinite;
-        }
-        
-        @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        .fade-in-scale {
-            animation: fadeInScale 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Animação de Piscar para o Item (Novo) */
-        @keyframes blinkingBg {
-            0% { background-color: rgba(99, 102, 241, 0.05); box-shadow: 0 0 0 0px rgba(99, 102, 241, 0); }
-            50% { background-color: rgba(99, 102, 241, 0.2); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3); }
-            100% { background-color: rgba(99, 102, 241, 0.05); box-shadow: 0 0 0 0px rgba(99, 102, 241, 0); }
-        }
-        .blinking-target {
-            animation: blinkingBg 1.5s infinite;
-            border-radius: 0.5rem;
-            z-index: 10;
-        }
-        
-        .manager-reply-box {
-            animation: slideInLeft 0.3s ease-out;
-        }
-        @keyframes slideInLeft {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .status-dot { display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 50%; margin-right: 0.35rem; }
+        .dot-yellow { background-color: #facc15; box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.2); }
+        .dot-green { background-color: #22c55e; box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2); }
+        .dot-red { background-color: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2); }
+        .notification-badge { position: absolute; top: -2px; right: -2px; padding: 2px 5px; border-radius: 999px; background: #ef4444; color: white; font-size: 0.65rem; font-weight: 700; min-width: 16px; text-align: center; border: 2px solid white; }
+        .modern-table th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 600; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+        .modern-table td { font-size: 0.875rem; color: #334155; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
+        .modern-table tr:hover td { background-color: #f8fafc; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800">
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-lg shadow-xl z-[70] transition-all duration-300 opacity-0 pointer-events-none translate-y-[-10px] flex items-center gap-3 border border-slate-700/50">
-        <div class="bg-green-500/20 p-1 rounded-full"><svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
-        <span id="toast-msg" class="font-medium text-sm">Operação realizada</span>
-    </div>
+    <!-- LOGIN / ACCESS VIEW -->
+    <div id="access-view" class="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-64 bg-gradient-to-r from-blue-700 to-indigo-800 transform skew-y-3 origin-top-left -translate-y-20 z-0"></div>
+        
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative z-10 fade-in border border-slate-100">
+            <div class="text-center mb-8">
+                <img src="https://i.postimg.cc/76mXWMJh/as-02.png" alt="Doremus Logo" class="h-16 mx-auto mb-4 object-contain">
+                <h1 class="text-2xl font-bold text-slate-800">Painel de Amostras</h1>
+                <p class="text-slate-500 text-sm mt-1">Bem-vindo(a) ao portal de feedbacks.</p>
+            </div>
 
-    <!-- Modal de Celebração -->
-    <div id="celebration-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4 transition-opacity">
-        <div class="bg-white rounded-2xl w-full max-w-sm p-8 shadow-2xl transform transition-all scale-100 text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
-            <div class="mb-4 inline-block bg-blue-50 p-4 rounded-full">
-                <span class="text-4xl">🎉</span>
-            </div>
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">Parabéns!</h2>
-            <p class="text-slate-600 text-sm leading-relaxed mb-6">
-                Você finalizou todos os itens.<br>
-                <span class="font-semibold text-indigo-600">Obrigada por colaborar em mais um relatório de feedbacks!</span>
-            </p>
-            <button onclick="document.getElementById('celebration-modal').classList.add('hidden')" class="bg-slate-900 hover:bg-black text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95 w-full">
-                Fechar
-            </button>
-        </div>
-    </div>
-
-    <!-- Modal Notificações -->
-    <div id="notifications-modal" class="fixed inset-0 bg-slate-900/20 z-40 hidden" onclick="toggleNotifications(false)">
-        <div class="absolute top-16 right-4 w-80 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[500px]" onclick="event.stopPropagation()">
-            <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                <h3 class="font-bold text-slate-700 text-sm">Notificações</h3>
-                <button onclick="toggleNotifications(false)" class="text-slate-400 hover:text-slate-600">&times;</button>
-            </div>
-            <div id="notification-list-container" class="flex-1 overflow-y-auto p-0">
-                <p class="text-center text-slate-400 text-xs py-8">Nenhuma notificação.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Resposta ao Gestor -->
-    <div id="seller-reply-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4 transition-opacity">
-        <div class="bg-white rounded-xl w-full max-w-md p-6 shadow-2xl">
-            <h3 class="font-bold text-slate-800 text-lg mb-2">Responder ao Gestor</h3>
-            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 text-sm text-slate-600 italic" id="manager-msg-preview">
-                "Mensagem do gestor..."
-            </div>
-            <textarea id="seller-reply-input" rows="3" class="w-full border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4 resize-none" placeholder="Sua resposta..."></textarea>
-            <div class="flex justify-end gap-2">
-                <button onclick="document.getElementById('seller-reply-modal').classList.add('hidden')" class="text-slate-500 text-sm font-medium px-4 py-2 hover:bg-slate-50 rounded-lg">Cancelar</button>
-                <button id="send-seller-reply-btn" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition-colors">Enviar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Autenticação Admin -->
-    <div id="admin-auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4 transition-opacity">
-        <div class="bg-white rounded-xl w-full max-w-xs p-6 shadow-2xl transform transition-all scale-100">
-            <div class="text-center mb-4">
-                <div class="bg-pink-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-pink-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <div class="space-y-6">
+                <div>
+                    <label for="access-code-input" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 text-center">Digite seu Código</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        </span>
+                        <input type="text" id="access-code-input" class="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-blue-100 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-800 font-bold text-xl text-center tracking-widest placeholder-slate-300">
+                    </div>
                 </div>
-                <h3 class="font-bold text-slate-800 text-lg">Baixa em Sistema</h3>
-                <p class="text-xs text-slate-500 mt-1">Digite a senha de administrador.</p>
-            </div>
-            <input type="password" id="admin-password-input" class="w-full text-center border-slate-200 bg-slate-50 rounded-lg py-2.5 px-4 text-sm focus:ring-2 focus:ring-pink-500 focus:outline-none mb-3 tracking-widest" placeholder="SENHA">
-            <p id="admin-auth-error" class="text-red-500 text-xs text-center mb-3 hidden font-medium">Senha incorreta.</p>
-            <div class="flex gap-2">
-                <button onclick="closeAdminAuth()" class="flex-1 text-slate-500 text-xs font-medium hover:bg-slate-50 py-2.5 rounded-lg transition-colors">Cancelar</button>
-                <button id="confirm-admin-auth-btn" class="flex-1 bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-2.5 rounded-lg shadow-md transition-colors">CONFIRMAR</button>
-            </div>
-        </div>
-    </div>
 
-    <!-- TELA DE LOGIN (Atualizada) -->
-    <div id="access-view" class="fixed inset-0 z-40 bg-white flex items-center justify-center p-6 bg-gradient-to-b from-slate-50 to-white">
-        <div class="w-full max-w-sm text-center fade-in-scale">
-            <div class="mb-12 relative">
-                <!-- Animação na Logo -->
-                <img src="https://i.postimg.cc/76mXWMJh/as-02.png" alt="Logo" class="h-28 w-auto mx-auto mb-6 object-contain drop-shadow-md animate-float">
-                <h1 class="text-2xl font-bold text-slate-800 tracking-tight leading-snug">Painel de Feedbacks<br>de Amostras</h1>
-                <p class="text-slate-500 text-sm mt-3">Acesse para registrar suas avaliações.</p>
+                <button id="load-data-btn" class="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold py-4 rounded-xl hover:shadow-lg hover:to-indigo-800 transition-all transform active:scale-[0.98] text-lg">
+                    Entrar
+                </button>
             </div>
             
-            <div class="space-y-6">
-                <div class="relative group">
-                    <input type="tel" id="access-code-input" placeholder=" " maxlength="6" class="peer w-full border-b-2 border-slate-300 py-3 text-center text-3xl font-mono font-medium text-slate-800 focus:border-indigo-600 focus:outline-none bg-transparent tracking-[0.5em] transition-colors">
-                    <label class="absolute left-1/2 -translate-x-1/2 -top-3 text-xs font-semibold text-slate-400 uppercase tracking-wider transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-slate-400 peer-focus:-top-3 peer-focus:text-xs peer-focus:text-indigo-600">Código de Acesso</label>
+            <div id="access-error" class="text-red-500 text-sm mt-6 text-center font-medium min-h-[20px]"></div>
+            
+            <!-- DEBUG LOG (Visível se houver erro) -->
+            <div id="debug-box" class="mt-4 p-3 bg-slate-900 text-green-400 text-[10px] font-mono rounded text-left hidden border border-slate-700 max-h-40 overflow-y-auto shadow-inner">
+                <p class="border-b border-gray-700 mb-1 pb-1 font-bold text-white">Log de Conexão:</p>
+                <div id="debug-log"></div>
+            </div>
+        </div>
+        <p class="text-slate-400 text-xs mt-6">© 2025 Doremus Aromes et Parfums</p>
+    </div>
+
+    <!-- LOADING STATE -->
+    <div id="loading-state" class="hidden fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-slate-100 border-t-blue-600 mb-6"></div>
+        <h2 id="loading-message" class="text-xl font-bold text-slate-800">A conectar...</h2>
+        <p id="loading-detail" class="text-sm text-slate-500 mt-2">Buscando cadastro...</p>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="main-content" class="hidden min-h-screen pb-12">
+        <nav class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center gap-4">
+                        <img src="https://i.postimg.cc/76mXWMJh/as-02.png" alt="Logo" class="h-8 md:h-10">
+                        <div class="hidden md:block w-px h-6 bg-slate-300"></div>
+                        <div>
+                            <h1 id="welcome-title" class="text-sm md:text-base font-bold text-slate-800">Olá</h1>
+                            <p id="session-info" class="text-xs text-slate-500">Sessão: ...</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 md:gap-6">
+                         <button id="refresh-btn" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-full transition-colors" title="Recarregar Dados">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        </button>
+                        <div class="relative">
+                            <button id="seller-notification-btn" class="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-full transition-colors relative">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                                <span id="seller-notification-count" class="notification-badge hidden">0</span>
+                            </button>
+                        </div>
+                        <button id="logout-btn" class="flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                            <span class="hidden md:inline">Sair</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- MEU DESEMPENHO Section -->
+            <div class="mb-8">
+                <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                    Meu Desempenho
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 stat-card flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-500 uppercase">Aprovadas</p>
+                            <p class="text-2xl font-bold text-green-600" id="stats-approved">0</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-lg text-green-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 stat-card flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-500 uppercase">Reprovadas</p>
+                            <p class="text-2xl font-bold text-red-600" id="stats-reproved">0</p>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-lg text-red-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 stat-card flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-slate-500 uppercase">Total Pendente</p>
+                            <p class="text-2xl font-bold text-yellow-600" id="stats-pending">0</p>
+                        </div>
+                        <div class="bg-yellow-100 p-3 rounded-lg text-yellow-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORIENTAÇÕES IMPORTANTES Section -->
+            <div class="mb-8 bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-xl shadow-sm">
+                <h3 class="text-lg font-bold text-blue-800 mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Orientações Importantes
+                </h3>
+                <ul class="space-y-2 text-sm text-blue-900">
+                    <li class="flex items-start gap-2">
+                        <span class="text-blue-500 mt-1">•</span>
+                        <span>Pedidos respondidos anteriormente como <strong>pendentes</strong> entram neste novo relatório para atualização.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-blue-500 mt-1">•</span>
+                        <span><strong>Comentários são fundamentais</strong>, principalmente nas reprovações.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-blue-500 mt-1">•</span>
+                        <span>Use o ícone de <strong>Nota</strong> no pedido para lembretes pessoais.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div id="pending-section" class="mb-10 hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-slate-800">Pedidos Pendentes de Ação</h2>
+                    <span id="pending-count-badge" class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-blue-200">0</span>
+                </div>
+                <div id="pending-orders-list" class="space-y-6"></div>
+            </div>
+
+            <div id="completed-section" class="mb-10 hidden">
+                <div class="flex items-center justify-between mb-4 pt-8 border-t border-slate-200">
+                    <h2 class="text-xl font-bold text-slate-700">Histórico Enviado ao Gestor</h2>
+                    <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-0.5 rounded-full border border-gray-200">Concluídos</span>
+                </div>
+                <div id="completed-orders-list" class="space-y-6"></div>
+            </div>
+
+            <!-- Empty State WITH DIAGNOSTIC -->
+            <div id="no-data-message" class="hidden text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
+                <div class="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Nenhuma amostra encontrada</h3>
+                <div id="empty-state-detail" class="mt-4 p-4 bg-red-50 rounded border border-red-100 text-left max-w-lg mx-auto overflow-hidden">
+                    <!-- Diagnostic info injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEEDBACK MODAL -->
+    <div id="feedback-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-40 transition-all duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden transform transition-all scale-100">
+            <!-- Header -->
+            <div class="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800" id="modal-title">Atualizar Feedback</h3>
+                    <p class="text-slate-500 text-sm mt-1" id="modal-sample-info">Carregando...</p>
+                </div>
+                <button id="cancel-modal-btn" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 overflow-y-auto custom-scrollbar">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Selecione o status:</p>
+                <div id="feedback-options" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                    <!-- Buttons injected via JS -->
+                </div>
+
+                <label for="observation" class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Observação Complementar</label>
+                <textarea id="observation" rows="3" class="w-full border-slate-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-3 text-sm text-slate-700 bg-slate-50" placeholder="Detalhe aqui o motivo do feedback, reação do cliente, ou próximos passos..."></textarea>
+                
+                <div class="flex items-center gap-2 mt-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                    <span>Comentários são fundamentais, principalmente nas reprovações.</span>
                 </div>
                 
-                <button id="load-data-btn" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all transform active:scale-[0.98]">
-                    Entrar no Painel
-                </button>
+                 <!-- Personal Note Feature -->
+                 <div class="mt-4 pt-4 border-t border-slate-100">
+                    <label class="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        Nota Pessoal (Apenas para você)
+                    </label>
+                    <input type="text" id="personal-note" class="w-full border-slate-200 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 text-sm bg-indigo-50/50" placeholder="Lembrete: Ligar para o cliente dia 15...">
+                </div>
             </div>
-            
-            <div id="access-error" class="text-red-500 text-xs mt-6 font-medium h-4"></div>
-            <div id="loading-spinner" class="hidden mt-6">
-                <div class="animate-spin rounded-full h-6 w-6 border-[3px] border-slate-200 border-t-indigo-600 mx-auto"></div>
+
+            <!-- Footer -->
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                <button id="save-button" class="bg-blue-600 text-white font-bold py-2.5 px-6 rounded-lg shadow-md hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    Salvar Feedback
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- DASHBOARD VIEW -->
-    <div id="dashboard-view" class="hidden flex-col h-screen overflow-hidden bg-slate-100">
-        
-        <!-- Navbar -->
-        <header class="bg-white border-b border-slate-200 px-6 py-3 shadow-sm z-30 flex justify-between items-center relative">
-            <div class="flex items-center gap-4">
-                <img src="https://i.postimg.cc/76mXWMJh/as-02.png" alt="Logo" class="h-8 w-auto object-contain">
-                <div class="h-6 w-px bg-slate-200"></div>
-                <div>
-                    <h2 id="seller-greeting" class="font-bold text-slate-800 text-sm leading-tight">Olá, Vendedor!</h2>
-                    <p class="text-[10px] text-slate-500 font-medium tracking-wide">Um excelente trabalho hoje!</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <!-- Botão de Notificação (Sino) -->
-                <button id="notif-btn" class="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors relative" onclick="toggleNotifications(true)">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                    <!-- Badge de contador -->
-                    <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full hidden animate-bounce"></span>
-                </button>
-
-                <!-- Botão Notas Pessoais (Lápis) -->
-                <button onclick="document.getElementById('postits-modal').classList.remove('hidden')" class="p-2.5 text-slate-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors" title="Notas">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                </button>
-                <div class="h-6 w-px bg-slate-200 mx-1"></div>
-                <button id="logout-btn" class="p-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Sair">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                </button>
-            </div>
-        </header>
-
-        <!-- Barra de Status Global -->
-        <div class="bg-white px-6 py-3 border-b border-slate-200 flex justify-between items-center">
-            <div>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Progresso Total</p>
-                <div class="flex items-center gap-2">
-                    <div class="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div id="progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-700" style="width: 0%"></div>
-                    </div>
-                    <span id="progress-text" class="text-xs font-bold text-slate-700">0%</span>
-                </div>
-            </div>
-            <div class="text-right">
-                <span class="text-[10px] font-medium text-slate-400">Sessão Ativa</span>
-            </div>
-        </div>
-
-        <!-- Conteúdo Principal -->
-        <main class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 scroll-smooth" id="main-scroll">
-            
-            <!-- Grid: Orientações e Gráfico -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-5xl mx-auto">
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col items-center justify-center">
-                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 w-full text-left">Meu Desempenho</h3>
-                    <div class="w-full h-40 relative">
-                        <canvas id="seller-chart"></canvas>
-                    </div>
-                </div>
-                <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-5 shadow-sm">
-                    <div class="flex items-start gap-4">
-                        <div class="bg-blue-100 text-blue-600 p-2 rounded-lg mt-0.5">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-800 mb-2">Orientações Importantes</h3>
-                            <ul class="text-xs text-slate-600 space-y-1.5 list-disc pl-4 marker:text-blue-400">
-                                <li>Pedidos respondidos anteriormente como <strong>pendentes</strong> entram neste novo relatório para atualização.</li>
-                                <li><strong>Comentários são fundamentais</strong>, principalmente nas reprovações.</li>
-                                <li>Use o ícone de <strong>Nota</strong> no pedido para lembretes pessoais.</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="orders-container" class="space-y-5 max-w-3xl mx-auto pb-10">
-                <!-- Pedidos inseridos dinamicamente -->
-            </div>
-        </main>
-    </div>
-
-    <!-- Modal Meus Post-its (Geral - Lápis Superior) -->
-    <div id="postits-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
-        <div class="bg-white rounded-xl w-full max-w-md h-[70vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
-            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-700 flex items-center gap-2 text-sm uppercase tracking-wide">
-                    <span class="text-yellow-500 text-lg">●</span> Notas Pessoais
+    <!-- SELLER NOTIFICATIONS MODAL -->
+    <div id="seller-notifications-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[85vh]">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-blue-50/50 rounded-t-2xl">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                    Mensagens do Gestor
                 </h3>
-                <button onclick="document.getElementById('postits-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button id="close-seller-notifications-btn" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+            </div>
+            <div id="seller-notifications-list" class="p-5 overflow-y-auto custom-scrollbar space-y-4 bg-slate-50 flex-1">
+                <!-- Notifications injected via JS -->
+            </div>
+            <div class="p-4 border-t border-slate-100 bg-white flex justify-end rounded-b-2xl">
+                <button id="close-seller-notifications-btn-bottom" class="text-sm font-semibold text-slate-500 hover:text-slate-800 px-4 py-2">Fechar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- REPLY TO MANAGER MODAL -->
+    <div id="seller-reply-modal" class="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 hidden z-[60]">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Responder ao Gestor</h3>
+            <div class="bg-slate-100 p-3 rounded-lg border border-slate-200 mb-4 text-sm text-slate-600 italic">
+                <p class="font-semibold not-italic mb-1 text-xs uppercase text-slate-400">Contexto:</p>
+                <p id="seller-reply-context">...</p>
+                <p id="seller-reply-original-msg" class="mt-2 font-medium text-slate-800">...</p>
+            </div>
+            <textarea id="seller-reply-message-input" rows="3" class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 mb-4" placeholder="Escreva sua resposta..."></textarea>
+            <div class="flex justify-end gap-3">
+                <button id="cancel-seller-reply-btn" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-semibold">Cancelar</button>
+                <button id="send-seller-reply-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold shadow">Enviar Resposta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM ALERT -->
+    <div id="custom-alert" class="fixed inset-0 bg-slate-900/70 flex items-center justify-center p-4 hidden z-[70]">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center transform transition-all scale-100">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            </div>
+            <h3 id="custom-alert-title" class="text-lg leading-6 font-medium text-slate-900">Erro</h3>
+            <div class="mt-2">
+                <p id="custom-alert-message" class="text-sm text-slate-500">Ocorreu um erro inesperado.</p>
+            </div>
+            <div class="mt-5">
+                <button id="custom-alert-ok-btn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-slate-800 text-base font-medium text-white hover:bg-slate-700 focus:outline-none sm:text-sm">
+                    Entendido
                 </button>
-            </div>
-            <div id="postits-list" class="flex-1 overflow-y-auto p-5 space-y-3 bg-slate-50/50">
-                <!-- Notas via JS -->
-            </div>
-            <div class="p-4 border-t border-slate-100 bg-white">
-                <div class="flex gap-2">
-                    <input type="text" id="new-postit-input" placeholder="Digite uma anotação..." class="flex-1 rounded-lg border-slate-200 text-sm px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors bg-slate-50">
-                    <button id="add-postit-btn" class="bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-4 py-2 transition-colors">
-                        <!-- Icone de Enviar/Check -->
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    </button>
-                </div>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, getDoc, updateDoc, query, where, getDocs, addDoc, deleteDoc, serverTimestamp, setDoc, deleteField, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { 
+            getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, 
+            serverTimestamp, query, where, writeBatch, limit, addDoc, Timestamp,
+            runTransaction, collectionGroup, getDocs
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
-             apiKey: "AIzaSyAF_TE28Tbp2nakBGTva1yEEbBCqWvRdJQ",
-             authDomain: "feedback-vendedores.firebaseapp.com",
-             projectId: "feedback-vendedores",
-             storageBucket: "feedback-vendedores.firebasestorage.app",
-             messagingSenderId: "650880422749",
-             appId: "1:650880422749:web:54a258964a6ca8db180eb4",
-             measurementId: "G-TG588KDK0C"
+            apiKey: "AIzaSyAF_TE28Tbp2nakBGTva1yEEbBCqWvRdJQ",
+            authDomain: "feedback-vendedores.firebaseapp.com",
+            projectId: "feedback-vendedores",
+            storageBucket: "feedback-vendedores.firebasestorage.app",
+            messagingSenderId: "650880422749",
+            appId: "1:650880422749:web:54a258964a6ca8db180eb4",
+            measurementId: "G-TG588KDK0C"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Elements
+        // Feedback Choices Configuration
+        const FEEDBACK_CHOICES = [
+            'A - COM PEDIDO', 'A - APROVADA SEM PEDIDO',
+            'P - AMOSTRA NÃO TESTADA', 'P - EM ANÁLISE', 'P - AMOSTRA SEM FEEDBACK',
+            'R - APRESENTAÇÃO PRÓ ATIVA', 'R - CALIBRE', 'R - EXTRAVIADA',
+            'R - FORA DA ESPECIFICAÇÃO DO CLIENTE', 'R - FORA DO PERFIL DO CLIENTE',
+            'R - FRACA / ESTOURANDO / COM CHUVEIRO', 'R - PRODUTO DESCONTINUADO',
+            'R - QUANTIDADE INSUFICIENTE', 'R - REPRESENTAÇÃO / DISTRIBUIDOR',
+            'R - SEM RETORNO DO CLIENTE', 'R - EXPORTACAO',
+            'E - INNOVATION / EVENTOS', 'E - EVENTO'
+        ];
+
+        // --- DOM Elements ---
         const accessView = document.getElementById('access-view');
-        const dashboardView = document.getElementById('dashboard-view');
-        const accessCodeInput = document.getElementById('access-code-input');
+        const loadingState = document.getElementById('loading-state');
+        const loadingMessage = document.getElementById('loading-message');
+        const loadingDetail = document.getElementById('loading-detail');
+        const mainContent = document.getElementById('main-content');
         const loadDataBtn = document.getElementById('load-data-btn');
-        const accessError = document.getElementById('access-error');
-        const loadingSpinner = document.getElementById('loading-spinner');
-        const ordersContainer = document.getElementById('orders-container');
-        const sellerNameDisplay = document.getElementById('seller-name-display');
-        const sellerGreeting = document.getElementById('seller-greeting');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
         const logoutBtn = document.getElementById('logout-btn');
-        const toast = document.getElementById('toast');
-        const toastMsg = document.getElementById('toast-msg');
-        const celebrationModal = document.getElementById('celebration-modal');
-        const notificationsModal = document.getElementById('notifications-modal');
-        const notifBadge = document.getElementById('notif-badge');
-        const notificationListContainer = document.getElementById('notification-list-container');
-        const sellerReplyModal = document.getElementById('seller-reply-modal');
-        const managerMsgPreview = document.getElementById('manager-msg-preview');
-        const sellerReplyInput = document.getElementById('seller-reply-input');
-        const sendSellerReplyBtn = document.getElementById('send-seller-reply-btn');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const accessError = document.getElementById('access-error');
+        const noDataMessage = document.getElementById('no-data-message');
+        const emptyStateDetail = document.getElementById('empty-state-detail');
+        const welcomeTitle = document.getElementById('welcome-title');
+        const sessionInfo = document.getElementById('session-info');
+        const debugLog = document.getElementById('debug-log');
+        const debugBox = document.getElementById('debug-box');
+
+        // Modal Elements
+        const feedbackModal = document.getElementById('feedback-modal');
+        const feedbackOptionsContainer = document.getElementById('feedback-options');
+        const observationInput = document.getElementById('observation');
+        const personalNoteInput = document.getElementById('personal-note');
+        const cancelFeedbackModalBtn = document.getElementById('cancel-modal-btn');
+        const saveFeedbackBtn = document.getElementById('save-button');
+        const modalTitle = document.getElementById('modal-title');
+        const modalSampleInfo = document.getElementById('modal-sample-info');
+
+        // Notification Elements
+        const sellerNotificationBtn = document.getElementById('seller-notification-btn');
+        const sellerNotificationCount = document.getElementById('seller-notification-count');
+        const sellerNotificationsModal = document.getElementById('seller-notifications-modal');
+        const sellerNotificationsList = document.getElementById('seller-notifications-list');
+        const closeSellerNotificationsBtn = document.getElementById('close-seller-notifications-btn');
+        const closeSellerNotificationsBtnBottom = document.getElementById('close-seller-notifications-btn-bottom');
         
-        // Admin Auth Elements
-        const adminAuthModal = document.getElementById('admin-auth-modal');
-        const adminPasswordInput = document.getElementById('admin-password-input');
-        const adminAuthError = document.getElementById('admin-auth-error');
-        const confirmAdminAuthBtn = document.getElementById('confirm-admin-auth-btn');
+        // Reply Modal
+        const sellerReplyModal = document.getElementById('seller-reply-modal');
+        const sellerReplyContext = document.getElementById('seller-reply-context');
+        const sellerReplyOriginalMsg = document.getElementById('seller-reply-original-msg');
+        const sellerReplyMessageInput = document.getElementById('seller-reply-message-input');
+        const cancelSellerReplyBtn = document.getElementById('cancel-seller-reply-btn');
+        const sendSellerReplyBtn = document.getElementById('send-seller-reply-btn');
 
-        // Post-it Elements
-        const postitsList = document.getElementById('postits-list');
-        const newPostitInput = document.getElementById('new-postit-input');
-        const addPostitBtn = document.getElementById('add-postit-btn');
+        // Stats Elements
+        const statsApproved = document.getElementById('stats-approved');
+        const statsReproved = document.getElementById('stats-reproved');
+        const statsPending = document.getElementById('stats-pending');
 
-        // State
+        // Alert
+        const customAlert = document.getElementById('custom-alert');
+        const customAlertTitle = document.getElementById('custom-alert-title');
+        const customAlertMessage = document.getElementById('custom-alert-message');
+        const customAlertOkBtn = document.getElementById('custom-alert-ok-btn');
+
+        // --- State ---
         let currentSessionId = null;
-        let currentSellerId = null;
-        let currentSellerData = null;
-        let sellerDocUnsubscribe = null;
-        let pendingDischargeOrderId = null; 
-        let sellerChartInstance = null;
-        let hasCelebrated = false; 
-        let postitsUnsubscribe = null;
-        let managerNotificationsUnsubscribe = null;
-        let currentReplyContext = null; 
-        let sellerNotificationsMap = {}; // Armazena notificações por item
+        let currentSellerOriginalName = null;
+        let currentSellerDocRef = null;
+        let allSellerSamples = [];
+        let sellerNotifications = [];
+        let dataListenersUnsubscribe = null;
+        let notificationListenerUnsubscribe = null;
+        let currentSample = null;
+        let selectedFeedback = null;
+        let currentActiveSessionName = "Sessão";
+        let currentNotificationForReply = null;
 
-        // Options
-        const FEEDBACK_OPTIONS = {
-            "Aprovados": [ "A - COM PEDIDO", "A - APROVADA SEM PEDIDO" ],
-            "Pendentes": [ "P - AMOSTRA NÃO TESTADA", "P - EM ANÁLISE", "P - AMOSTRA SEM FEEDBACK" ],
-            "Reprovados": [ "R - APRESENTAÇÃO PRÓ ATIVA", "R - CALIBRE", "R - EXTRAVIADA", "R - FORA DA ESPECIFICAÇÃO DO CLIENTE", "R - FORA DO PERFIL DO CLIENTE", "R - PRODUTO DESCONTINUADO", "R - QUANTIDADE INSUFICIENTE", "R - REPRESENTAÇÃO / DISTRIBUIDOR", "R - SEM RETORNO DO CLIENTE", "R - EXPORTACAO" ],
-            "Eventos": [ "E - EVENTO", "E - INNOVATION / EVENTOS" ]
-        };
+        // --- Helper Functions ---
+        const normalizeText = (text = '') => text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() : '';
+        const sanitizeForFirebaseId = (text) => normalizeText(text).replace(/\//g, "-");
 
-        // --- Init ---
-        (async () => {
-            try {
-                await signInAnonymously(auth);
-                const savedCode = localStorage.getItem('sellerAccessCode');
-                if (savedCode) { accessCodeInput.value = savedCode; handleLogin(); }
-            } catch (e) { accessError.textContent = "Erro de conexão."; }
-        })();
-
-        loadDataBtn.addEventListener('click', handleLogin);
-
-        async function handleLogin() {
-            const code = accessCodeInput.value.replace(/\s/g, '');
-            if (code.length !== 6) { accessError.textContent = "Digite o código de 6 dígitos."; return; }
-
-            loadDataBtn.classList.add('hidden');
-            loadingSpinner.classList.remove('hidden');
-            accessError.textContent = "";
-
-            try {
-                const configSnap = await getDoc(doc(db, "configuracoes", "sessaoAtiva"));
-                if (!configSnap.exists() || !configSnap.data().current) throw new Error("Sistema indisponível.");
-                
-                currentSessionId = configSnap.data().current;
-                const q = query(collection(db, "sessoes", currentSessionId, "vendedores"), where("accessCode", "==", code));
-                const querySnapshot = await getDocs(q);
-
-                if (querySnapshot.empty) throw new Error("Código inválido para esta sessão.");
-
-                const sellerDoc = querySnapshot.docs[0];
-                currentSellerId = sellerDoc.id;
-                currentSellerData = sellerDoc.data();
-                
-                localStorage.setItem('sellerAccessCode', code);
-                setupDashboard();
-
-            } catch (error) {
-                accessError.textContent = error.message;
-                loadDataBtn.classList.remove('hidden');
-                loadingSpinner.classList.add('hidden');
+        function logDebug(msg, error = false) {
+            console.log(msg);
+            const p = document.createElement('p');
+            p.textContent = `> ${msg}`;
+            if(error) p.className = "text-red-500 font-bold";
+            if (debugLog) {
+                debugLog.appendChild(p);
+                debugBox.classList.remove('hidden');
             }
         }
 
-        function setupDashboard() {
+        function showAlert(message, title = "Atenção") {
+            customAlertTitle.textContent = title;
+            customAlertMessage.innerHTML = message;
+            customAlert.classList.remove('hidden');
+        }
+        customAlertOkBtn.addEventListener('click', () => customAlert.classList.add('hidden'));
+
+        function fireConfetti() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            var random = function(min, max) { return Math.random() * (max - min) + min; }
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) { return clearInterval(interval); }
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+
+        // --- Login & Session Logic ---
+        
+        async function getActiveSession() {
+            try {
+                // First checks if there is a global active session configured
+                const activeSessionRef = doc(db, "configuracoes", "sessaoAtiva");
+                const docSnap = await getDoc(activeSessionRef);
+                if (docSnap.exists() && docSnap.data().current) {
+                    const sessionDocId = docSnap.data().current;
+                    const sessionConfigRef = doc(db, "sessoes", sessionDocId, "configuracoes", "geral");
+                    const configSnap = await getDoc(sessionConfigRef);
+                    const sessionName = configSnap.exists() ? configSnap.data().nome : sessionDocId;
+                    return { id: sessionDocId, name: sessionName };
+                }
+                return null;
+            } catch (error) {
+                console.error("Error getting active session", error);
+                logDebug("Falha ao obter Sessão Ativa: " + error.message, true);
+                return null;
+            }
+        }
+
+        async function attemptLogin() {
+            const inputCodeRaw = document.getElementById('access-code-input').value.trim();
+
+            if (!inputCodeRaw) {
+                accessError.textContent = 'Por favor, digite o Código de Acesso.';
+                return false;
+            }
+
+            loadingMessage.textContent = 'A conectar...';
+            loadingDetail.textContent = 'Procurando seu cadastro no sistema...';
             accessView.classList.add('hidden');
-            dashboardView.classList.remove('hidden');
-            dashboardView.classList.add('flex');
+            loadingState.classList.remove('hidden');
+            if(debugLog) debugLog.innerHTML = '';
             
-            const fullName = currentSellerData.originalName || "Vendedor";
-            const firstName = fullName.split(' ')[0];
-            sellerGreeting.textContent = `Olá, ${firstName}!`;
+            let foundSessionId = null;
+            let foundSellerDocSnap = null;
+            let foundSellerRef = null;
 
-            // Listener Dados
-            const docRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
-            sellerDocUnsubscribe = onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    currentSellerData = docSnap.data();
-                    const samples = currentSellerData.amostras || [];
-                    renderOrders(samples, currentSellerData.sinalizedOrders || [], currentSellerData.orderNotes || {});
-                    updateChart(samples);
-                }
-            });
-
-            // Listener Meus Post-its (Geral)
-            const postitsRef = collection(docRef, "private_notes");
-            const qPostits = query(postitsRef, orderBy("createdAt", "desc"));
-            postitsUnsubscribe = onSnapshot(qPostits, (snapshot) => {
-                renderPostits(snapshot.docs);
-            });
-
-            // Listen for Manager Notifications
-            listenForManagerNotifications();
-        }
-
-        // --- FUNÇÃO CORRIGIDA: Filtro local para nomes ---
-        const normalizeText = (text = '') => text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim().replace(/\s+/g, ' ') : '';
-
-        function listenForManagerNotifications() {
-            // Removemos o filtro 'where' que pode ser muito estrito
-            // Baixamos as últimas notificações e filtramos no cliente
-            const q = query(collection(db, "sessoes", currentSessionId, "notificacoesVendedor"), orderBy("timestamp", "desc"), limit(100));
-            
-            managerNotificationsUnsubscribe = onSnapshot(q, (snapshot) => {
-                const myNameNorm = normalizeText(currentSellerData.originalName);
+            try {
+                logDebug(`Iniciando busca por: ${inputCodeRaw}`);
                 
-                // Filtra apenas as notificações para este vendedor
-                const notifications = snapshot.docs
-                    .map(doc => ({id: doc.id, ...doc.data()}))
-                    .filter(n => normalizeText(n.sellerName) === myNameNorm); // Comparação normalizada segura
-
-                let hasNew = false;
-                snapshot.docChanges().forEach(change => {
-                    if (change.type === "added") {
-                        const data = change.doc.data();
-                        // Verifica se é para mim E se não foi lido
-                        if (normalizeText(data.sellerName) === myNameNorm && !data.read) {
-                            hasNew = true;
+                // 1. Tentar PRIMEIRO na Sessão Ativa
+                const activeSession = await getActiveSession();
+                
+                if (activeSession) {
+                    logDebug(`1. Verificando sessão ativa: ${activeSession.id}`);
+                    try {
+                        const vendedoresRef = collection(db, "sessoes", activeSession.id, "vendedores");
+                        const qStr = query(vendedoresRef, where('accessCode', '==', inputCodeRaw));
+                        let snap = await getDocs(qStr);
+                        
+                        if(snap.empty && !isNaN(inputCodeRaw)) {
+                             const qNum = query(vendedoresRef, where('accessCode', '==', parseInt(inputCodeRaw, 10)));
+                             snap = await getDocs(qNum);
                         }
+                        
+                        if(snap.empty) {
+                             const qAlt = query(vendedoresRef, where('codigo', '==', inputCodeRaw));
+                             snap = await getDocs(qAlt);
+                        }
+
+                        if (!snap.empty) {
+                            logDebug(`--> ENCONTRADO NA SESSÃO ATIVA!`);
+                            foundSellerDocSnap = snap.docs[0];
+                            foundSellerRef = snap.docs[0].ref;
+                            foundSessionId = activeSession.id;
+                        }
+                    } catch (errActive) {
+                        logDebug(`Erro na busca ativa: ${errActive.message}`);
                     }
-                });
-
-                sellerNotificationsMap = {};
-                notifications.forEach(n => {
-                    const key = `${n.pedido}_${n.produto}`;
-                    if(!sellerNotificationsMap[key]) sellerNotificationsMap[key] = [];
-                    sellerNotificationsMap[key].push(n);
-                });
-
-                const unreadCount = notifications.filter(n => !n.read).length;
-                
-                if (unreadCount > 0) {
-                    notifBadge.classList.remove('hidden');
-                    notifBadge.textContent = unreadCount > 9 ? '9+' : unreadCount;
-                } else {
-                    notifBadge.classList.add('hidden');
                 }
 
-                renderNotifications(notifications);
-                
-                // Re-render para mostrar as caixas azuis de resposta
-                if (currentSellerData && currentSellerData.amostras) {
-                    renderOrders(currentSellerData.amostras, currentSellerData.sinalizedOrders || [], currentSellerData.orderNotes || {});
+                // 2. Se não achou na ativa, Tenta busca global
+                if (!foundSessionId) {
+                    logDebug(`2. Tentando busca global...`);
+                    try {
+                        let q = query(collectionGroup(db, 'vendedores'), where('accessCode', '==', inputCodeRaw));
+                        let querySnapshot = await getDocs(q);
+                        
+                        if (querySnapshot.empty && !isNaN(inputCodeRaw)) {
+                            const qNum = query(collectionGroup(db, 'vendedores'), where('accessCode', '==', parseInt(inputCodeRaw, 10)));
+                            let snapNum = await getDocs(qNum);
+                            if (!snapNum.empty) querySnapshot = snapNum;
+                        }
+                        
+                        if (querySnapshot.empty) {
+                             const qAlt = query(collectionGroup(db, 'vendedores'), where('codigo', '==', inputCodeRaw));
+                             let snapAlt = await getDocs(qAlt);
+                             if (!snapAlt.empty) querySnapshot = snapAlt;
+                        }
+
+                        if (!querySnapshot.empty) {
+                            const bestMatch = querySnapshot.docs[querySnapshot.size - 1]; 
+                            foundSellerDocSnap = bestMatch;
+                            foundSellerRef = bestMatch.ref;
+                            if (foundSellerRef.parent && foundSellerRef.parent.parent) {
+                                foundSessionId = foundSellerRef.parent.parent.id;
+                                logDebug(`--> SUCESSO GLOBAL! Sessão: ${foundSessionId}`);
+                            }
+                        }
+                    } catch (globalErr) {
+                        logDebug(`Busca global falhou (falta índice?): ${globalErr.message}`, true);
+                    }
                 }
 
-                if(hasNew) showToast("Nova resposta do gerente!", "text-blue-400");
-            });
+                // 3. FALLBACK "BRUTO": Varredura na sessão conhecida 1768846859583
+                if (!foundSessionId) {
+                    logDebug(`3. Ativando varredura manual na sessão 1768846859583...`);
+                    const hardcodedSession = "1768846859583";
+                    try {
+                        const vendedoresRef = collection(db, "sessoes", hardcodedSession, "vendedores");
+                        const snap = await getDocs(vendedoresRef);
+                        
+                        snap.forEach(doc => {
+                            const d = doc.data();
+                            if (d.accessCode == inputCodeRaw || d.codigo == inputCodeRaw) {
+                                logDebug(`--> ENCONTRADO MANUALMENTE!`);
+                                foundSellerDocSnap = doc;
+                                foundSellerRef = doc.ref;
+                                foundSessionId = hardcodedSession;
+                            }
+                        });
+                    } catch (manualErr) {
+                        logDebug(`Erro na varredura manual: ${manualErr.message}`);
+                    }
+                }
+
+            } catch (err) {
+                logDebug(`Erro crítico: ${err.message}`, true);
+            }
+
+            if (foundSessionId && foundSellerDocSnap) {
+                currentSessionId = foundSessionId;
+                currentSellerDocRef = foundSellerRef;
+                currentSellerOriginalName = foundSellerDocSnap.data().originalName || "Vendedor";
+                
+                try {
+                    const configSnap = await getDoc(doc(db, "sessoes", currentSessionId, "configuracoes", "geral"));
+                    currentActiveSessionName = configSnap.exists() ? configSnap.data().nome : currentSessionId;
+                } catch(e) {}
+
+                sessionInfo.textContent = `Sessão: ${currentActiveSessionName}`;
+                welcomeTitle.textContent = `Olá, ${currentSellerOriginalName}`;
+
+                localStorage.setItem('sellerCodeV15', inputCodeRaw);
+                
+                startRealtimeListeners();
+                listenForSellerNotifications();
+                return true;
+
+            } else {
+                accessError.innerHTML = 'Código não encontrado.<br><span class="text-xs text-gray-500">Verifique os logs abaixo.</span>';
+                loadingState.classList.add('hidden');
+                accessView.classList.remove('hidden');
+                return false;
+            }
         }
 
-        function renderNotifications(notifications) {
-            notificationListContainer.innerHTML = '';
-            if (notifications.length === 0) {
-                notificationListContainer.innerHTML = '<p class="text-center text-slate-400 text-xs py-8">Nenhuma notificação.</p>';
+        // --- Data Listeners ---
+
+        function startRealtimeListeners() {
+            if (dataListenersUnsubscribe) dataListenersUnsubscribe();
+
+            loadingDetail.textContent = 'Baixando lista de amostras...';
+
+            // CRITICAL FIX: Listen to the DOCUMENT itself to get the ARRAY, not a subcollection
+            const unsub = onSnapshot(currentSellerDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const samples = data.amostras || []; // Read array field
+                    allSellerSamples = samples.map(s => ({ ...s, id: s.id || Math.random().toString(36).substr(2, 9) })); // Ensure ID
+                    
+                    console.log(`Carregadas ${samples.length} amostras (Array)`);
+                    logDebug(`Amostras carregadas: ${samples.length}`);
+                    
+                    updateStats();
+                    renderDashboard();
+                } else {
+                    console.error("Seller doc removed!");
+                    logDebug("Documento do vendedor foi removido!", true);
+                }
+            }, (error) => {
+                console.error("Error fetching samples", error);
+                loadingState.classList.add('hidden');
+                showAlert("Erro ao carregar dados. Verifique permissões ou conexão.<br>Erro: " + error.message);
+            });
+            
+            dataListenersUnsubscribe = unsub;
+        }
+
+        function updateStats() {
+            let approved = 0;
+            let reproved = 0;
+            let pending = 0;
+
+            allSellerSamples.forEach(s => {
+                // Safe check for finalizedByVendor
+                const isFinalized = s.finalizedByVendor === true;
+                
+                if (!isFinalized) {
+                    pending++;
+                } else if (s.feedback) {
+                    if (s.feedback.startsWith('A')) approved++;
+                    else if (s.feedback.startsWith('R')) reproved++;
+                }
+            });
+
+            // Smooth animation for numbers
+            animateValue(statsApproved, parseInt(statsApproved.textContent), approved, 500);
+            animateValue(statsReproved, parseInt(statsReproved.textContent), reproved, 500);
+            animateValue(statsPending, parseInt(statsPending.textContent), pending, 500);
+            
+            document.getElementById('pending-count-badge').textContent = pending;
+        }
+
+        function animateValue(obj, start, end, duration) {
+            if (start === end) return;
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) window.requestAnimationFrame(step);
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // --- Rendering ---
+
+        function renderDashboard() {
+            loadingState.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+
+            const pendingContainer = document.getElementById('pending-orders-list');
+            const completedContainer = document.getElementById('completed-orders-list');
+            const pendingSection = document.getElementById('pending-section');
+            const completedSection = document.getElementById('completed-section');
+
+            if (allSellerSamples.length === 0) {
+                noDataMessage.classList.remove('hidden');
+                pendingSection.classList.add('hidden');
+                completedSection.classList.add('hidden');
+                
+                // Show specific debug info to user
+                emptyStateDetail.innerHTML = `
+                    <p class="text-sm font-bold text-slate-700">Conectado a ${currentSellerOriginalName}</p>
+                    <p class="text-xs text-slate-500 mt-1">O documento existe, mas a lista de amostras está vazia.</p>
+                `;
                 return;
             }
+            noDataMessage.classList.add('hidden');
 
-            notifications.forEach(notif => {
-                const div = document.createElement('div');
-                const isRead = notif.read ? 'opacity-70 bg-white' : 'bg-blue-50';
-                div.className = `p-4 border-b border-slate-100 ${isRead} hover:bg-slate-50 transition-colors cursor-pointer`;
+            // Logic: "previously answered samples as pending go into this new report"
+            // Means: !finalizedByVendor includes both new (isPending=true) and answered-but-open (isPending=false)
+            // Safety: treat undefined finalizedByVendor as false
+            const pendingSamples = allSellerSamples.filter(s => s.finalizedByVendor !== true);
+            const completedSamples = allSellerSamples.filter(s => s.finalizedByVendor === true);
+
+            renderOrderCards(pendingSamples, pendingContainer, true);
+            renderOrderCards(completedSamples, completedContainer, false);
+
+            if (pendingSamples.length > 0) pendingSection.classList.remove('hidden');
+            else pendingSection.classList.add('hidden');
+
+            if (completedSamples.length > 0) completedSection.classList.remove('hidden');
+            else completedSection.classList.add('hidden');
+        }
+
+        function renderOrderCards(samples, container, isPendingSection) {
+            container.innerHTML = '';
+            
+            // Group by Order ID
+            const grouped = samples.reduce((acc, sample) => {
+                const key = sample.pedido || 'Sem Pedido';
+                if (!acc[key]) acc[key] = { ...sample, items: [] };
+                acc[key].items.push(sample);
+                return acc;
+            }, {});
+
+            // Sort logic (numeric if possible)
+            const sortedKeys = Object.keys(grouped).sort((a, b) => {
+                return (parseInt(a) || 0) - (parseInt(b) || 0);
+            });
+
+            sortedKeys.forEach(orderId => {
+                const group = grouped[orderId];
+                // Check if all items in this group are answered (isPending === false)
+                // Safety: Treat undefined isPending as true (pending) just in case
+                const allAnswered = group.items.every(item => item.isPending === false);
                 
-                let timeStr = "";
-                if(notif.timestamp) {
-                    const d = notif.timestamp.toDate();
-                    timeStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                // Color Logic
+                let borderClass = 'border-blue-500';
+                let statusBadge = '';
+                
+                if (isPendingSection) {
+                    if (allAnswered) {
+                        borderClass = 'border-green-500';
+                        statusBadge = '<span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-md animate-pulse">Pronto para Enviar</span>';
+                    } else {
+                        borderClass = 'border-yellow-400';
+                        statusBadge = '<span class="bg-yellow-100 text-yellow-700 text-xs font-bold px-2 py-1 rounded-md">Pendente</span>';
+                    }
+                } else {
+                    borderClass = 'border-gray-300 opacity-75';
+                    statusBadge = '<span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-md">Enviado</span>';
                 }
 
-                div.innerHTML = `
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="font-bold text-slate-700 text-xs">${notif.managerName || 'Gestor'}</span>
-                        <span class="text-[10px] text-slate-400">${timeStr}</span>
-                    </div>
-                    <p class="text-xs text-slate-600 mb-2">"${notif.replyMessage}"</p>
-                    <div class="flex justify-between items-center mt-2">
-                        <span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded truncate max-w-[120px]">${notif.produto}</span>
-                        <div class="flex gap-2">
-                            <button class="text-xs text-blue-600 font-bold hover:underline" onclick="goToItem(event, '${notif.pedido}', '${notif.produto}', '${notif.id}')">
-                                Ver no Pedido
-                            </button>
-                            <button class="text-xs text-green-600 font-bold hover:underline" onclick="openSellerReplyModal(event, '${notif.id}', '${notif.replyMessage}')">
-                                Responder
-                            </button>
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-xl shadow-sm border-l-4 ${borderClass} overflow-hidden mb-4 transition-all hover:shadow-md`;
+                
+                // Header of the card (Order Info)
+                card.innerHTML = `
+                    <div class="p-4 bg-white border-b border-slate-100 cursor-pointer order-header flex justify-between items-center" data-order-id="${orderId}">
+                        <div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+                            <h3 class="font-bold text-lg text-slate-800 flex items-center">
+                                <span class="text-slate-400 mr-2">#</span>${orderId}
+                            </h3>
+                            <div class="text-sm">
+                                <span class="font-bold text-slate-700 block md:inline">${group.razaoSocial || 'Cliente Desconhecido'}</span>
+                                <span class="text-slate-400 hidden md:inline mx-1">•</span>
+                                <span class="text-slate-500 text-xs md:text-sm">Nota: ${group.notaFiscal || 'N/A'}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            ${statusBadge}
+                            <svg class="w-5 h-5 text-slate-400 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                         </div>
                     </div>
+                    
+                    <!-- Table Container with Horizontal Scroll -->
+                    <div class="transition-all duration-300 bg-slate-50/50">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse modern-table">
+                                <thead>
+                                    <tr>
+                                        <th class="p-4 pl-6">Produto</th>
+                                        <th class="p-4">Descrição</th>
+                                        <th class="p-4">Qtde.</th>
+                                        <th class="p-4">Cód. Cliente</th>
+                                        <th class="p-4">Divisão</th>
+                                        <th class="p-4">Vendedor</th>
+                                        <th class="p-4">Emissão NF</th>
+                                        <th class="p-4">Status Atual</th>
+                                        <th class="p-4">Feedback / Obs</th>
+                                        <th class="p-4 pr-6 text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-slate-100">
+                                    ${group.items.map(item => {
+                                        const isItemPending = item.isPending !== false; // Safety check
+                                        const dotClass = isItemPending ? 'dot-yellow' : (item.feedback && item.feedback.startsWith('A') ? 'dot-green' : 'dot-red');
+                                        const rowClass = isItemPending ? 'bg-white' : 'bg-slate-50/30';
+                                        
+                                        // Formatting Date (assuming timestamp or string)
+                                        let emissionDate = item.emissao || item.dataEmissao || 'N/A';
+                                        if (emissionDate && typeof emissionDate === 'object' && emissionDate.toDate) {
+                                            emissionDate = emissionDate.toDate().toLocaleDateString('pt-BR');
+                                        }
+
+                                        return `
+                                        <tr class="${rowClass} hover:bg-blue-50/30 transition-colors">
+                                            <td class="p-4 pl-6 font-medium text-slate-700">${item.produto}</td>
+                                            <td class="p-4 text-xs text-slate-500 max-w-xs truncate" title="${item.descricao}">${item.descricao || '-'}</td>
+                                            <td class="p-4 text-slate-600 font-mono text-xs">${item.qtde || '0'}</td>
+                                            <td class="p-4 text-slate-500 text-xs">${item.codCliente || '-'}</td>
+                                            <td class="p-4 text-slate-500 text-xs">${item.divisao || item.divisaoComercial || '-'}</td>
+                                            <td class="p-4 text-slate-500 text-xs truncate max-w-[100px]">${item.vendedor || '-'}</td>
+                                            <td class="p-4 text-slate-500 text-xs">${emissionDate}</td>
+                                            <td class="p-4 text-xs">
+                                                <span class="status-dot ${dotClass}"></span>
+                                                ${isItemPending ? 'Pendente' : (item.feedback ? item.feedback.split('-')[0].trim() : 'Respondido')}
+                                            </td>
+                                            <td class="p-4 max-w-xs">
+                                                <div class="text-xs font-semibold text-slate-700 truncate" title="${item.feedback}">${item.feedback || ''}</div>
+                                                <div class="text-xs text-slate-500 truncate italic" title="${item.observation}">${item.observation || ''}</div>
+                                            </td>
+                                            <td class="p-4 pr-6 text-right">
+                                                <button class="action-btn text-xs font-bold py-1.5 px-3 rounded-lg transition-colors border ${isItemPending ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}" data-id="${item.id}">
+                                                    ${isItemPending ? 'Responder' : 'Editar'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Footer Action (Signal Manager) -->
+                        ${isPendingSection && allAnswered ? `
+                        <div class="p-4 bg-green-50 border-t border-green-100 flex justify-end items-center gap-4">
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-green-800">Pedido Completo!</p>
+                                <p class="text-xs text-green-600">Agradecemos a colaboração. Pode enviar.</p>
+                            </div>
+                            <button class="signal-btn bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-green-700 hover:shadow-lg transition-all transform hover:-translate-y-0.5" data-order="${orderId}">
+                                Sinalizar Gestor
+                            </button>
+                        </div>
+                        ` : ''}
+                    </div>
                 `;
-                notificationListContainer.appendChild(div);
+
+                container.appendChild(card);
+            });
+
+            // Re-attach listeners
+            container.querySelectorAll('.action-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.target.dataset.id;
+                    const sample = allSellerSamples.find(s => s.id === id);
+                    if (sample) openFeedbackModal(sample);
+                });
+            });
+
+            container.querySelectorAll('.order-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    // Toggle accordion logic can be added here if you want it collapsible
+                });
+            });
+
+            container.querySelectorAll('.signal-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => signalManager(e.target.dataset.order));
             });
         }
-        
-        // --- FUNÇÕES GLOBAIS (DEFINIDAS COMO FUNCTION E ATRIBUIDAS A WINDOW) ---
-        
-        function toggleNotifications(show) {
-            if(show) {
-                notificationsModal.classList.remove('hidden');
-            } else {
-                notificationsModal.classList.add('hidden');
-            }
+
+        // --- Logic: Feedback & Manager Signaling ---
+
+        function openFeedbackModal(sample) {
+            currentSample = sample;
+            selectedFeedback = sample.feedback || null;
+            observationInput.value = sample.observation || '';
+            personalNoteInput.value = sample.personalNote || ''; // Load note
+            
+            const isPending = sample.isPending !== false;
+            modalTitle.textContent = isPending ? 'Novo Feedback' : 'Editar Feedback';
+            modalSampleInfo.textContent = `${sample.produto} - ${sample.descricao || ''}`;
+            
+            feedbackOptionsContainer.innerHTML = '';
+            
+            FEEDBACK_CHOICES.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.textContent = choice;
+                btn.className = `p-3 rounded-lg text-xs font-semibold border text-left transition-all ${selectedFeedback === choice ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-300 ring-offset-1' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`;
+                btn.onclick = () => {
+                    selectedFeedback = choice;
+                    // Redraw buttons to update active state
+                    Array.from(feedbackOptionsContainer.children).forEach(b => {
+                        b.className = `p-3 rounded-lg text-xs font-semibold border text-left transition-all ${b.textContent === choice ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-300 ring-offset-1' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`;
+                    });
+                };
+                feedbackOptionsContainer.appendChild(btn);
+            });
+
+            feedbackModal.classList.remove('hidden');
         }
-        window.toggleNotifications = toggleNotifications;
 
-        async function goToItem(e, orderId, productName, notificationId) {
-            e.stopPropagation();
-            toggleNotifications(false); // Fecha a modal
+        cancelFeedbackModalBtn.addEventListener('click', () => feedbackModal.classList.add('hidden'));
 
-            // Marca como lido no Firestore
-            try {
-                const notifRef = doc(db, "sessoes", currentSessionId, "notificacoesVendedor", notificationId);
-                await updateDoc(notifRef, { read: true });
-            } catch(err) { console.error("Error marking read", err); }
-
-            // Encontra o Container do Pedido
-            const content = document.getElementById(`content-${orderId}`);
-            if (!content) {
-                showToast("Pedido não encontrado na lista atual.", "text-red-400");
+        saveFeedbackBtn.addEventListener('click', async () => {
+            if (!selectedFeedback || !observationInput.value.trim()) {
+                showAlert("Por favor, selecione um feedback e escreva uma observação.");
                 return;
             }
 
-            // Abre o Acordeão se estiver fechado
-            if (!content.classList.contains('open')) {
-                toggleOrder(orderId);
-            }
-
-            // Aguarda a animação do acordeão (500ms) para então rolar
-            setTimeout(() => {
-                const productElements = content.querySelectorAll('h4');
-                let targetEl = null;
-                // Normaliza o texto para comparação segura
-                const cleanName = (str) => str.trim().toLowerCase();
-                const targetName = cleanName(productName);
-
-                for (let el of productElements) {
-                    if (cleanName(el.textContent) === targetName) {
-                        targetEl = el.closest('.relative'); // O container do item
-                        break;
-                    }
-                }
-
-                if (targetEl) {
-                    // Rola até o item
-                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    // Aplica o efeito de piscar
-                    targetEl.classList.add('blinking-target');
-                    
-                    // Remove o efeito após 5 segundos
-                    setTimeout(() => {
-                        targetEl.classList.remove('blinking-target');
-                    }, 5000);
-                } else {
-                     showToast("Item não encontrado dentro do pedido.", "text-yellow-500");
-                }
-            }, 500);
-        }
-        window.goToItem = goToItem;
-
-        function openSellerReplyModal(e, notificationId, message) {
-            e.stopPropagation();
-            toggleNotifications(false);
-            currentReplyContext = { notificationId, message };
-            managerMsgPreview.textContent = `"${message}"`;
-            sellerReplyInput.value = '';
-            sellerReplyModal.classList.remove('hidden');
-        }
-        window.openSellerReplyModal = openSellerReplyModal;
-
-        sendSellerReplyBtn.addEventListener('click', async () => {
-            const replyText = sellerReplyInput.value.trim();
-            if(!replyText) return;
+            saveFeedbackBtn.disabled = true;
+            saveFeedbackBtn.textContent = 'Salvando...';
 
             try {
-                const notifSnap = await getDoc(doc(db, "sessoes", currentSessionId, "notificacoesVendedor", currentReplyContext.notificationId));
-                if(!notifSnap.exists()) return;
-                const notifData = notifSnap.data();
+                // UPDATE ARRAY LOGIC
+                // 1. Get current data again to be safe
+                const sellerSnap = await getDoc(currentSellerDocRef);
+                const sellerData = sellerSnap.data();
+                let samples = sellerData.amostras || [];
+                
+                // 2. Find and update specific item in array
+                const index = samples.findIndex(s => s.id === currentSample.id);
+                if (index > -1) {
+                    samples[index] = {
+                        ...samples[index],
+                        feedback: selectedFeedback,
+                        observation: observationInput.value.trim(),
+                        personalNote: personalNoteInput.value.trim(),
+                        isPending: false,
+                        lastUpdate: new Date(), // Firebase will convert
+                        editedAfterCompletion: true
+                    };
+                    
+                    // 3. Write back entire array
+                    await updateDoc(currentSellerDocRef, { amostras: samples });
+                    feedbackModal.classList.add('hidden');
+                } else {
+                    throw new Error("Amostra não encontrada no array.");
+                }
 
-                await updateDoc(doc(db, "sessoes", currentSessionId, "notificacoesVendedor", currentReplyContext.notificationId), { read: true });
+            } catch (error) {
+                console.error(error);
+                showAlert("Erro ao salvar. Tente novamente.");
+            } finally {
+                saveFeedbackBtn.disabled = false;
+                saveFeedbackBtn.textContent = 'Salvar Feedback';
+            }
+        });
 
+        async function signalManager(orderId) {
+            const btn = document.querySelector(`.signal-btn[data-order="${orderId}"]`);
+            if(btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+
+            try {
+                // ARRAY UPDATE LOGIC FOR SIGNALING
+                const sellerSnap = await getDoc(currentSellerDocRef);
+                const sellerData = sellerSnap.data();
+                let samples = sellerData.amostras || [];
+                
+                // Update items matching orderId
+                let updated = false;
+                samples = samples.map(s => {
+                    if (s.pedido == orderId && s.finalizedByVendor !== true) {
+                        updated = true;
+                        return { ...s, finalizedByVendor: true };
+                    }
+                    return s;
+                });
+                
+                if (updated) {
+                    await updateDoc(currentSellerDocRef, { amostras: samples });
+                    
+                    // Notification
+                    const notifRef = doc(collection(db, "sessoes", currentSessionId, "notificacoes"));
+                    await setDoc(notifRef, {
+                        message: `<strong>${currentSellerOriginalName}</strong> finalizou o pedido <strong>${orderId}</strong>.`,
+                        color: 'purple',
+                        timestamp: serverTimestamp(),
+                        triggerPopup: true
+                    });
+
+                    fireConfetti();
+                } else {
+                    showAlert("Nada a atualizar neste pedido.");
+                }
+                
+            } catch (error) {
+                console.error(error);
+                showAlert("Erro ao sinalizar gestor.");
+                if(btn) { btn.disabled = false; btn.textContent = 'Sinalizar Gestor'; }
+            }
+        }
+
+        // --- Notification System ---
+        function listenForSellerNotifications() {
+            if(notificationListenerUnsubscribe) notificationListenerUnsubscribe();
+            
+            const q = query(
+                collection(db, "sessoes", currentSessionId, "notificacoesVendedor"),
+                where("sellerName", "==", currentSellerOriginalName)
+            );
+
+            notificationListenerUnsubscribe = onSnapshot(q, (snapshot) => {
+                sellerNotifications = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                sellerNotifications.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                
+                const unread = sellerNotifications.filter(n => !n.read).length;
+                sellerNotificationCount.textContent = unread;
+                if(unread > 0) sellerNotificationCount.classList.remove('hidden');
+                else sellerNotificationCount.classList.add('hidden');
+            });
+        }
+
+        sellerNotificationBtn.addEventListener('click', () => {
+            sellerNotificationsList.innerHTML = '';
+            if (sellerNotifications.length === 0) {
+                sellerNotificationsList.innerHTML = '<p class="text-center text-gray-400 py-4">Sem notificações.</p>';
+            } else {
+                sellerNotifications.forEach(n => {
+                    const item = document.createElement('div');
+                    item.className = `p-4 rounded-xl border ${n.read ? 'bg-white border-slate-100' : 'bg-blue-50 border-blue-100'} text-sm`;
+                    
+                    const date = n.timestamp?.toDate().toLocaleString('pt-BR') || '';
+                    
+                    item.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="font-bold text-slate-700">${n.managerName}</span>
+                            <span class="text-xs text-slate-400">${date}</span>
+                        </div>
+                        <p class="text-slate-600 mb-2">Respondendo sobre <strong>${n.produto}</strong>:</p>
+                        <div class="bg-white p-3 rounded-lg border border-slate-100 italic text-slate-600 mb-3">
+                            "${n.replyMessage}"
+                        </div>
+                        ${n.sellerReplyMessage ? `<div class="text-right text-xs text-blue-600 font-medium mb-2">Você respondeu: "${n.sellerReplyMessage}"</div>` : ''}
+                        <div class="flex justify-end gap-2">
+                            <button class="reply-notif-btn text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 font-semibold" data-id="${n.id}">Responder</button>
+                            ${!n.read ? `<button class="read-notif-btn text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200" data-id="${n.id}">Marcar Lida</button>` : ''}
+                        </div>
+                    `;
+                    sellerNotificationsList.appendChild(item);
+                });
+                
+                // Listeners for buttons inside modal
+                document.querySelectorAll('.reply-notif-btn').forEach(b => {
+                    b.addEventListener('click', (e) => {
+                        const notif = sellerNotifications.find(n => n.id === e.target.dataset.id);
+                        openReplyModal(notif);
+                    });
+                });
+                
+                document.querySelectorAll('.read-notif-btn').forEach(b => {
+                    b.addEventListener('click', async (e) => {
+                        await updateDoc(doc(db, "sessoes", currentSessionId, "notificacoesVendedor", e.target.dataset.id), { read: true });
+                    });
+                });
+            }
+            sellerNotificationsModal.classList.remove('hidden');
+        });
+
+        closeSellerNotificationsBtn.addEventListener('click', () => sellerNotificationsModal.classList.add('hidden'));
+        closeSellerNotificationsBtnBottom.addEventListener('click', () => sellerNotificationsModal.classList.add('hidden'));
+
+        function openReplyModal(notif) {
+            currentNotificationForReply = notif;
+            sellerReplyContext.textContent = `Produto: ${notif.produto} | Pedido: ${notif.pedido}`;
+            sellerReplyOriginalMsg.textContent = `"${notif.replyMessage}"`;
+            sellerReplyMessageInput.value = notif.sellerReplyMessage || '';
+            
+            sellerNotificationsModal.classList.add('hidden');
+            sellerReplyModal.classList.remove('hidden');
+        }
+
+        cancelSellerReplyBtn.addEventListener('click', () => {
+            sellerReplyModal.classList.add('hidden');
+            sellerNotificationsModal.classList.remove('hidden');
+        });
+
+        sendSellerReplyBtn.addEventListener('click', async () => {
+            const msg = sellerReplyMessageInput.value.trim();
+            if(!msg) return;
+            
+            sendSellerReplyBtn.disabled = true;
+            try {
+                // Update notification
+                await updateDoc(doc(db, "sessoes", currentSessionId, "notificacoesVendedor", currentNotificationForReply.id), {
+                    sellerReplyMessage: msg,
+                    read: true
+                });
+                // Add to Manager replies
                 await addDoc(collection(db, "sessoes", currentSessionId, "respostasVendedor"), {
-                    sellerName: currentSellerData.originalName,
-                    originalManagerMessage: notifData.replyMessage,
-                    originalManagerName: notifData.managerName,
-                    replyMessage: replyText,
-                    pedido: notifData.pedido,
-                    produto: notifData.produto,
+                    sellerName: currentSellerOriginalName,
+                    replyMessage: msg,
+                    originalManagerMessage: currentNotificationForReply.replyMessage,
+                    pedido: currentNotificationForReply.pedido,
+                    produto: currentNotificationForReply.produto,
                     timestamp: serverTimestamp(),
                     readByManager: false
                 });
-
+                
                 sellerReplyModal.classList.add('hidden');
-                showToast("Resposta enviada!", "text-green-500");
-
-            } catch (error) {
-                console.error("Error sending reply:", error);
-                showToast("Erro ao enviar.", "text-red-500");
-            }
-        });
-
-
-        function updateChart(samples) {
-            const ctx = document.getElementById('seller-chart');
-            if(!ctx) return;
-
-            let counts = { approved: 0, rejected: 0, pending: 0, events: 0 };
-            
-            samples.forEach(s => {
-                const fb = s.feedback || '';
-                if(fb.startsWith('A -')) counts.approved++;
-                else if(fb.startsWith('R -')) counts.rejected++;
-                else if(fb.startsWith('E -')) counts.events++;
-                else counts.pending++;
-            });
-
-            if (sellerChartInstance) {
-                sellerChartInstance.data.datasets[0].data = [counts.approved, counts.rejected, counts.pending, counts.events];
-                sellerChartInstance.update();
-            } else {
-                Chart.register(ChartDataLabels);
-                sellerChartInstance = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Aprovados', 'Reprovados', 'Pendentes', 'Eventos'],
-                        datasets: [{
-                            data: [counts.approved, counts.rejected, counts.pending, counts.events],
-                            backgroundColor: ['#22c55e', '#ef4444', '#f59e0b', '#a855f7'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } },
-                            datalabels: { display: false }
-                        },
-                        cutout: '75%'
-                    }
-                });
-            }
-        }
-
-        function renderOrders(samples, sinalizedOrders, orderNotes) {
-            ordersContainer.innerHTML = '';
-            const ordersMap = {};
-            let totalItems = 0;
-            let completedItems = 0;
-
-            samples.forEach(sample => {
-                totalItems++;
-                const hasFeedback = sample.feedback && sample.feedback.trim() !== '';
-                if (hasFeedback) completedItems++;
-
-                const orderId = sample.pedido || 'Geral';
-                if (!ordersMap[orderId]) {
-                    ordersMap[orderId] = {
-                        id: orderId,
-                        client: sample.razaoSocial || 'Cliente',
-                        items: [],
-                        pendingCount: 0,
-                        isSinalized: sinalizedOrders.includes(orderId),
-                        isSystemDischarged: false
-                    };
-                }
-                
-                ordersMap[orderId].items.push(sample);
-                
-                if (!hasFeedback || sample.feedback.startsWith('P -')) {
-                    ordersMap[orderId].pendingCount++;
-                }
-            });
-
-            const pct = totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
-            progressBar.style.width = `${pct}%`;
-            progressText.textContent = `${pct}%`;
-
-            if (pct === 100 && totalItems > 0 && !hasCelebrated) {
-                hasCelebrated = true;
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                setTimeout(() => celebrationModal.classList.remove('hidden'), 500);
-            }
-
-            const sortedOrders = Object.values(ordersMap).sort((a, b) => {
-                const aDischarged = a.items.every(i => i.systemDischarged);
-                const bDischarged = b.items.every(i => i.systemDischarged);
-                if (!aDischarged && bDischarged) return -1;
-                if (aDischarged && !bDischarged) return 1;
-
-                const aPending = a.pendingCount > 0;
-                const bPending = b.pendingCount > 0;
-                if (aPending && !bPending) return -1;
-                if (!aPending && bPending) return 1;
-                return b.id.localeCompare(a.id);
-            });
-
-            if (sortedOrders.length === 0) {
-                ordersContainer.innerHTML = '<div class="text-center py-12 text-slate-400 text-sm font-medium">Nenhum pedido atribuído.</div>';
-                return;
-            }
-
-            sortedOrders.forEach(order => {
-                const isOrderDischarged = order.items.every(i => i.systemDischarged === true);
-                const isFullyComplete = order.pendingCount === 0;
-                const noteText = orderNotes[order.id] || '';
-                const hasNote = noteText.trim().length > 0;
-                
-                let cardClass = '';
-                let statusBadge = '';
-                let chevronColor = 'text-slate-300';
-                
-                if (isOrderDischarged) {
-                    cardClass = 'order-discharged border-pink-200 shadow-sm';
-                    statusBadge = '<span class="bg-pink-100 text-pink-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Baixado em Sistema</span>';
-                    chevronColor = 'text-pink-400';
-                } else if (isFullyComplete) {
-                    cardClass = 'bg-white border-green-500 border-l-4 shadow-md';
-                    statusBadge = '<span class="bg-green-50 text-green-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Pronto p/ Baixa</span>';
-                } else {
-                    cardClass = 'bg-white border-yellow-400 border-l-4 shadow-sm';
-                    statusBadge = `<span class="bg-yellow-50 text-yellow-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">${order.pendingCount} Pendentes</span>`;
-                }
-
-                let footerHtml = '';
-                if (isOrderDischarged) {
-                    footerHtml = `<div class="bg-pink-50/50 border-t border-pink-100 p-3 flex justify-center text-pink-700 font-bold text-xs uppercase tracking-wide gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Pedido Finalizado e Baixado</div>`;
-                } else if (isFullyComplete) {
-                    footerHtml = `<div class="bg-slate-50 border-t border-slate-100 p-3 flex justify-between items-center"><span class="text-[10px] text-slate-400 font-medium">Todos os itens respondidos.</span><div class="flex gap-2"><button class="signal-btn bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition-all flex items-center gap-2" data-order-id="${order.id}"><span>Notificar</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg></button><button class="admin-discharge-btn bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow transition-all flex items-center gap-2" data-order-id="${order.id}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>Baixa (Admin)</button></div></div>`;
-                } else {
-                    footerHtml = `<div class="bg-slate-50 border-t border-slate-100 p-3 text-center"><span class="text-[10px] text-slate-400 font-medium">Complete todos os itens para liberar a baixa.</span></div>`;
-                }
-
-                const noteIconClass = hasNote ? 'text-yellow-500 fill-yellow-100' : 'text-slate-300 hover:text-slate-500';
-
-                const card = document.createElement('div');
-                card.innerHTML = `
-                    <div class="p-5 cursor-pointer select-none border-b border-transparent hover:border-slate-100 relative" onclick="toggleOrder('${order.id}')">
-                        <div class="flex justify-between items-center mb-1">
-                            <div class="flex items-center gap-3">
-                                <h3 class="text-sm font-bold text-slate-800">PEDIDO #${order.id}</h3>
-                                <button class="postit-toggle-btn transition-colors ${noteIconClass}" onclick="toggleOrderNote(event, '${order.id}')" title="Notas do Pedido">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 12h10v2H7zm0-4h10v2H7zm0 8h7v2H7z"/></svg>
-                                </button>
-                            </div>
-                            <div class="${chevronColor} chevron transform transition-transform duration-300" id="chevron-${order.id}">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-end">
-                            <p class="text-xs text-slate-500 font-medium truncate w-2/3 uppercase">${order.client}</p>
-                            ${statusBadge}
-                        </div>
-                    </div>
-                    
-                    <div id="content-${order.id}" class="order-content bg-white">
-                        <!-- Seção de Nota (Post-it) com Botões Check e Lixeira -->
-                        <div id="note-section-${order.id}" class="note-section bg-yellow-50 border-b border-yellow-100 px-5 py-4 ${hasNote ? 'block' : 'hidden'}">
-                            <div class="sticky-note p-3 shadow-md relative">
-                                <span class="text-[10px] text-yellow-800/60 font-bold uppercase mb-1 block">Lembrete Pessoal (Privado)</span>
-                                <textarea id="note-input-${order.id}" rows="2" class="w-full bg-transparent text-sm text-yellow-900 placeholder-yellow-700/50 focus:outline-none resize-none font-medium leading-relaxed" placeholder="Escreva um lembrete pessoal para este pedido (apenas você vê)...">${noteText}</textarea>
-                                <div class="flex justify-end mt-2 gap-2">
-                                    <button class="bg-red-100 hover:bg-red-200 text-red-600 p-2 rounded-lg transition-colors shadow-sm" onclick="deleteOrderNote('${order.id}')" title="Excluir Nota">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    </button>
-                                    <button class="bg-green-100 hover:bg-green-200 text-green-700 p-2 rounded-lg transition-colors shadow-sm" onclick="saveOrderNote('${order.id}')" title="Salvar Nota">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="px-5 pb-5 space-y-6 pt-4">
-                            ${order.items.map(item => renderItem(item, isOrderDischarged)).join('')}
-                        </div>
-                        ${footerHtml}
-                    </div>
-                `;
-                card.className = `rounded-xl shadow-sm border overflow-hidden transition-all duration-300 hover:shadow-md mb-4 ${cardClass}`;
-                ordersContainer.appendChild(card);
-            });
-
-            attachListeners();
-        }
-
-        function renderItem(item, isOrderDischarged) {
-            const hasFeedback = item.feedback && item.feedback.trim() !== '';
-            const isPendingCategory = item.feedback && item.feedback.startsWith('P -');
-            
-            let statusIndicator = `<span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Pendente</span>`;
-            let responseTimeHtml = '';
-
-            if (hasFeedback) {
-                if (isPendingCategory) statusIndicator = `<span class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100">Em Análise</span>`;
-                else statusIndicator = `<span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100">Respondido</span>`;
-                
-                if (item.lastUpdate) {
-                    const date = item.lastUpdate.toDate ? item.lastUpdate.toDate() : new Date(item.lastUpdate);
-                    const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-                    const formattedTime = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                    responseTimeHtml = `<span class="text-[10px] text-slate-400 font-medium ml-2 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> ${formattedDate} às ${formattedTime}</span>`;
-                }
-            }
-
-            // Verificar se há resposta do gerente para este item
-            const key = `${item.pedido}_${item.produto}`;
-            const itemNotifs = sellerNotificationsMap[key] || [];
-            const latestReply = itemNotifs.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0))[0];
-            
-            let managerReplyHtml = '';
-            if(latestReply) {
-                const managerName = latestReply.managerName || 'Gerente';
-                managerReplyHtml = `
-                    <div class="manager-reply-box mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 relative">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg>
-                                Mensagem de ${managerName}
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-700 italic leading-relaxed">"${latestReply.replyMessage}"</p>
-                    </div>
-                `;
-            }
-
-            let optionsHtml = '<option value="" class="text-slate-400">Selecione o Status...</option>';
-            for (const [group, opts] of Object.entries(FEEDBACK_OPTIONS)) {
-                optionsHtml += `<optgroup label="${group}" class="font-bold text-slate-800">`;
-                opts.forEach(opt => {
-                    const selected = item.feedback === opt ? 'selected' : '';
-                    optionsHtml += `<option value="${opt}" ${selected} class="text-slate-600 font-normal">${opt}</option>`;
-                });
-                optionsHtml += `</optgroup>`;
-            }
-
-            const disabledAttr = isOrderDischarged ? 'disabled' : '';
-            const disabledClass = isOrderDischarged ? 'opacity-50 cursor-not-allowed' : '';
-
-            const deleteButtonHtml = (hasFeedback && !isOrderDischarged)
-                ? `<button class="delete-btn p-2 text-slate-300 hover:text-red-500 transition-colors" title="Limpar resposta" data-id="${item.id}">
-                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                   </button>` 
-                : '';
-
-            const saveButtonHtml = !isOrderDischarged 
-                ? `<button type="submit" class="save-btn bg-white border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-indigo-600 font-bold py-1.5 px-4 rounded-lg text-xs shadow-sm transition-all flex items-center gap-2"><span>Salvar</span></button>`
-                : `<span class="text-xs text-pink-600 font-bold ml-1">Bloqueado (Baixado)</span>`;
-
-            return `
-                <div class="relative pl-4 border-l-2 ${hasFeedback && !isPendingCategory ? 'border-green-300' : 'border-slate-200'}">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <h4 class="font-bold text-slate-700 text-sm">${item.produto}</h4>
-                                ${statusIndicator}
-                            </div>
-                            <div class="text-[10px] text-slate-400 flex flex-wrap gap-2 items-center">
-                                <span>${item.descricao || ''}</span>
-                                <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
-                                <span class="font-mono bg-slate-50 px-1 rounded border border-slate-100">Qtde: ${item.qtde}</span>
-                                <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
-                                <span class="font-medium text-slate-600">NF: ${item.notaFiscal || '---'} (${item.emissaoNF || '-'})</span>
-                            </div>
-                            ${responseTimeHtml}
-                        </div>
-                    </div>
-
-                    ${managerReplyHtml}
-
-                    <form class="item-form mt-2 ${disabledClass}" data-id="${item.id}">
-                        <div class="space-y-2">
-                            <div class="relative">
-                                <select id="feedback-${item.id}" class="form-select block w-full rounded-lg border-slate-200 text-xs font-medium text-slate-700 py-2.5 pl-3 pr-8 focus:ring-0 focus:border-indigo-500 cursor-pointer" ${disabledAttr}>
-                                    ${optionsHtml}
-                                </select>
-                            </div>
-                            
-                            <textarea id="obs-${item.id}" rows="2" class="form-textarea block w-full rounded-lg border-slate-200 text-xs text-slate-700 py-2 px-3 focus:ring-0 focus:border-indigo-500 resize-none" placeholder="Observação obrigatória..." ${disabledAttr}>${item.observation || ''}</textarea>
-                        </div>
-
-                        <div class="flex justify-between items-center mt-2 pt-1">
-                            ${saveButtonHtml}
-                            ${deleteButtonHtml}
-                        </div>
-                    </form>
-                </div>
-            `;
-        }
-
-        function attachListeners() {
-            document.querySelectorAll('.item-form').forEach(form => {
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    if(!form.classList.contains('opacity-50')) saveItem(e.target.dataset.id);
-                });
-            });
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    deleteItem(e.currentTarget.dataset.id);
-                });
-            });
-            document.querySelectorAll('.admin-discharge-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openAdminAuth(e, e.currentTarget.dataset.orderId);
-                });
-            });
-            document.querySelectorAll('.signal-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    notifyManager(e, e.currentTarget.dataset.orderId);
-                });
-            });
-        }
-
-        // --- GLOBAL FUNCTIONS EXPORTED TO WINDOW FOR HTML ACCESS ---
-        
-        function toggleOrder(orderId) {
-            const content = document.getElementById(`content-${orderId}`);
-            const chevron = document.getElementById(`chevron-${orderId}`);
-            document.querySelectorAll('.order-content').forEach(el => { if (el.id !== `content-${orderId}`) el.classList.remove('open'); });
-            document.querySelectorAll('.chevron').forEach(el => { if (el.id !== `chevron-${orderId}`) el.classList.remove('rotate-180'); });
-            if (content.classList.contains('open')) { content.classList.remove('open'); chevron.classList.remove('rotate-180'); } else { content.classList.add('open'); chevron.classList.add('rotate-180'); }
-        }
-        window.toggleOrder = toggleOrder;
-
-        function showToast(msg, textColorClass) {
-            toastMsg.innerText = msg;
-            toast.querySelector('svg').setAttribute('class', `w-4 h-4 ${textColorClass || 'text-green-400'}`);
-            toast.classList.remove('opacity-0', 'translate-y-[-10px]');
-            setTimeout(() => toast.classList.add('opacity-0', 'translate-y-[-10px]'), 2500);
-        }
-        window.showToast = showToast;
-
-        function toggleOrderNote(e, orderId) {
-            e.stopPropagation();
-            const noteSection = document.getElementById(`note-section-${orderId}`);
-            if (noteSection.classList.contains('hidden')) {
-                noteSection.classList.remove('hidden');
-                setTimeout(() => document.getElementById(`note-input-${orderId}`).focus(), 100);
-            } else {
-                noteSection.classList.add('hidden');
-            }
-        }
-        window.toggleOrderNote = toggleOrderNote;
-
-        async function saveOrderNote(orderId) {
-            const text = document.getElementById(`note-input-${orderId}`).value;
-            try {
-                const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
-                const data = { orderNotes: {} };
-                data.orderNotes[orderId] = text;
-                await setDoc(sellerRef, data, { merge: true });
-                showToast('Lembrete salvo!', 'text-yellow-600');
-            } catch (e) {
+                showAlert("Resposta enviada com sucesso!", "Sucesso");
+            } catch(e) {
                 console.error(e);
-                showToast('Erro ao salvar nota', 'text-red-400');
-            }
-        }
-        window.saveOrderNote = saveOrderNote;
-
-        async function deleteOrderNote(orderId) {
-            if(!confirm("Excluir esta nota?")) return;
-            try {
-                const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
-                const updateData = {};
-                updateData[`orderNotes.${orderId}`] = deleteField();
-                await updateDoc(sellerRef, updateData);
-                document.getElementById(`note-input-${orderId}`).value = "";
-                showToast('Nota excluída!', 'text-slate-500');
-            } catch (e) {
-                console.error(e);
-                showToast('Erro ao excluir', 'text-red-400');
-            }
-        }
-        window.deleteOrderNote = deleteOrderNote;
-
-        function openAdminAuth(e, orderId) {
-            e.stopPropagation();
-            pendingDischargeOrderId = orderId;
-            adminPasswordInput.value = '';
-            adminAuthError.classList.add('hidden');
-            adminAuthModal.classList.remove('hidden');
-            adminPasswordInput.focus();
-        }
-        window.openAdminAuth = openAdminAuth;
-
-        function closeAdminAuth() {
-            adminAuthModal.classList.add('hidden');
-            pendingDischargeOrderId = null;
-        }
-        window.closeAdminAuth = closeAdminAuth;
-        
-        async function notifyManager(e, orderId) {
-            e.stopPropagation();
-            const btn = e.currentTarget;
-            btn.innerHTML = 'Enviando...';
-            
-            try {
-                let sinalizedList = currentSellerData.sinalizedOrders || [];
-                if (!sinalizedList.includes(orderId)) sinalizedList.push(orderId);
-
-                const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
-                await updateDoc(sellerRef, { sinalizedOrders: sinalizedList });
-
-                await addDoc(collection(db, "sessoes", currentSessionId, "notificacoes"), {
-                    message: `<strong>${currentSellerData.originalName}</strong> finalizou o Pedido <strong>${orderId}</strong>!`,
-                    color: 'purple',
-                    timestamp: serverTimestamp(),
-                    triggerPopup: true
-                });
-                showToast('Notificado com sucesso', 'text-purple-500');
-            } catch(e) { console.error(e); }
-        }
-        window.notifyManager = notifyManager;
-
-        // --- AUTH & DISCHARGE LOGIC ---
-        
-        confirmAdminAuthBtn.addEventListener('click', async () => {
-            const pwd = adminPasswordInput.value;
-            if (pwd === 'admin123') {
-                closeAdminAuth();
-                if (pendingDischargeOrderId) {
-                    await dischargeOrder(pendingDischargeOrderId);
-                }
-            } else {
-                adminAuthError.classList.remove('hidden');
-            }
-        });
-
-        async function dischargeOrder(orderId) {
-            try {
-                const itemsInOrder = currentSellerData.amostras.filter(s => s.pedido === orderId);
-                if (!itemsInOrder.length) return;
-
-                const updatedSamples = currentSellerData.amostras.map(s => {
-                    if (s.pedido === orderId) {
-                        return { ...s, systemDischarged: true };
-                    }
-                    return s;
-                });
-
-                const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
-                await updateDoc(sellerRef, { amostras: updatedSamples });
-
-                showToast(`Pedido ${orderId} baixado!`, 'text-pink-500');
-
-            } catch (error) {
-                console.error(error);
-                showToast('Erro ao dar baixa.', 'text-red-500');
-            }
-        }
-
-        async function saveItem(itemId) {
-            const feedbackInput = document.getElementById(`feedback-${itemId}`);
-            const obsInput = document.getElementById(`obs-${itemId}`);
-            const btn = document.querySelector(`form[data-id="${itemId}"] .save-btn`);
-
-            const newFeedback = feedbackInput.value;
-            const newObs = obsInput.value.trim();
-
-            if (!newFeedback) { showToast('Selecione um status', 'text-red-400'); return; }
-            if (!newObs) { showToast('Observação obrigatória', 'text-red-400'); obsInput.focus(); return; }
-
-            const originalContent = btn.innerHTML;
-            btn.innerHTML = `...`;
-            btn.disabled = true;
-
-            try {
-                const isStillPending = newFeedback.startsWith('P -');
-                const timestamp = new Date(); 
-                
-                const updatedSamples = currentSellerData.amostras.map(s => {
-                    if (s.id === itemId) {
-                        return {
-                            ...s,
-                            feedback: newFeedback,
-                            observation: newObs,
-                            isPending: isStillPending,
-                            lastUpdate: timestamp,
-                            editedAfterCompletion: true
-                        };
-                    }
-                    return s;
-                });
-
-                const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
-                await updateDoc(sellerRef, { amostras: updatedSamples });
-
-                const itemData = updatedSamples.find(s => s.id === itemId);
-                await addDoc(collection(db, "sessoes", currentSessionId, "notificacoes"), {
-                    message: `<strong>${currentSellerData.originalName}</strong>: ${newFeedback} (Ped: ${itemData.pedido})`,
-                    color: isStillPending ? 'yellow' : 'blue',
-                    timestamp: serverTimestamp(),
-                    triggerPopup: true
-                });
-
-                showToast('Salvo com sucesso', 'text-green-400');
-
-            } catch (error) {
-                console.error(error);
-                showToast('Erro ao salvar', 'text-red-400');
+                showAlert("Erro ao enviar resposta.");
             } finally {
-                btn.innerHTML = originalContent;
-                btn.disabled = false;
+                sendSellerReplyBtn.disabled = false;
             }
-        }
+        });
 
-        async function deleteItem(itemId) {
-            if(!confirm("Limpar esta resposta?")) return;
-            try {
-                const updatedSamples = currentSellerData.amostras.map(s => {
-                    if (s.id === itemId) return { ...s, feedback: "", observation: "", isPending: true, lastUpdate: new Date() };
-                    return s;
-                });
-                const sellerRef = doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId);
-                await updateDoc(sellerRef, { amostras: updatedSamples });
-                showToast('Resposta limpa', 'text-slate-400');
-            } catch (error) { console.error(error); }
-        }
 
-        // Post-its Logic (Modal List)
-        function renderPostits(docs) {
-            postitsList.innerHTML = '';
-            if (docs.length === 0) {
-                postitsList.innerHTML = '<p class="text-center text-slate-400 text-xs mt-10 italic">Nenhuma anotação.</p>';
-                return;
-            }
-            docs.forEach(docSnap => {
-                const note = docSnap.data();
-                const div = document.createElement('div');
-                div.className = 'postit-note p-3 rounded-lg relative group transition-transform hover:scale-[1.02] cursor-default';
-                div.innerHTML = `
-                    <p class="text-yellow-900 text-xs font-medium whitespace-pre-wrap leading-relaxed">${note.text}</p>
-                    <button class="absolute -top-2 -right-2 bg-white text-red-400 hover:text-red-600 rounded-full p-1 shadow-sm delete-note-btn" data-id="${docSnap.id}">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                `;
-                postitsList.appendChild(div);
-            });
-
-            document.querySelectorAll('.delete-note-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const id = e.currentTarget.dataset.id;
-                    await deleteDoc(doc(db, "sessoes", currentSessionId, "vendedores", currentSellerId, "private_notes", id));
-                });
-            });
-        }
-
-        addPostitBtn.addEventListener('click', async () => {
-            const text = newPostitInput.value.trim();
-            if(!text) return;
-            newPostitInput.value = '';
-            await addDoc(collection(db, "sessoes", currentSessionId, "vendedores", currentSellerId, "private_notes"), {
-                text: text,
-                createdAt: serverTimestamp()
-            });
-            showToast("Nota adicionada", "text-green-500");
+        // --- Init ---
+        loadDataBtn.addEventListener('click', () => {
+            attemptLogin();
         });
 
         logoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('sellerAccessCode');
-            if(sellerDocUnsubscribe) sellerDocUnsubscribe();
-            if(postitsUnsubscribe) postitsUnsubscribe();
+            localStorage.clear();
             location.reload();
         });
+        
+        refreshBtn.addEventListener('click', () => {
+             loadingState.classList.remove('hidden');
+             startRealtimeListeners();
+             listenForSellerNotifications();
+        });
+
+        (async () => {
+            await signInAnonymously(auth);
+            const savedCode = localStorage.getItem('sellerCodeV15');
+            
+            if(savedCode) {
+                document.getElementById('access-code-input').value = savedCode;
+                attemptLogin();
+            } else {
+                accessView.classList.remove('hidden');
+            }
+        })();
 
     </script>
 </body>
 </html>
+
 
 
 
