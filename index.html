@@ -13,6 +13,15 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         
+        /* Highlight Animation para "Ir ao Pedido" */
+        @keyframes flashHighlight {
+            0%, 100% { background-color: transparent; }
+            50% { background-color: #fef08a; } /* Amarelo Intenso */
+        }
+        .highlight-flash {
+            animation: flashHighlight 1s ease-in-out 3; /* Pisca 3 vezes */
+        }
+
         /* Scrollbar personalizada */
         .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
@@ -42,9 +51,11 @@
             color: #334155; 
             border-bottom: 1px solid #f1f5f9; 
             padding: 12px; 
-            vertical-align: top; /* Alinha texto ao topo se quebrar linha */
+            vertical-align: top; 
         }
         .modern-table tr:hover td { background-color: #f8fafc; }
+        
+        .notification-badge { position: absolute; top: -2px; right: -2px; padding: 2px 5px; border-radius: 999px; background: #ef4444; color: white; font-size: 0.65rem; font-weight: 700; min-width: 16px; text-align: center; border: 2px solid white; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -158,7 +169,7 @@
                 </div>
             </div>
 
-            <!-- PENDING SECTION (FOCAL POINT) -->
+            <!-- PENDING SECTION -->
             <div id="pending-section" class="mb-10 hidden">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -172,6 +183,7 @@
                 <div id="pending-orders-list" class="space-y-6"></div>
             </div>
 
+            <!-- COMPLETED SECTION -->
             <div id="completed-section" class="mb-10 hidden">
                 <div class="flex items-center justify-between mb-4 pt-8 border-t border-slate-200">
                     <h2 class="text-xl font-bold text-slate-400">Histórico / Concluídos</h2>
@@ -350,7 +362,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { 
             getFirestore, doc, onSnapshot, getDoc, updateDoc, collection, setDoc, 
-            serverTimestamp, query, where, collectionGroup, getDocs, addDoc
+            serverTimestamp, query, where, collectionGroup, getDocs, addDoc, deleteDoc
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -687,6 +699,8 @@
 
                 const card = document.createElement('div');
                 card.className = `bg-white rounded-xl shadow-sm ${borderClass} overflow-hidden mb-4`;
+                // Add ID for scroll target
+                card.id = `order-card-${orderId}`;
                 
                 card.innerHTML = `
                     <div class="p-3 bg-white border-b border-slate-100 flex justify-between items-center">
@@ -731,8 +745,9 @@
                                         btnHtml = `<button class="text-xs font-bold py-1.5 px-3 rounded-lg border ${btnStyle}" onclick="window.openFeedback('${item.id}')">${item.isPending !== false ? 'Responder' : 'Editar'}</button>`;
                                     }
 
+                                    // Add identifier for scrolling
                                     return `
-                                    <tr class="${rowClass}">
+                                    <tr class="${rowClass}" data-product-code="${item.produto || ''}" data-order="${item.pedido || ''}">
                                         <td class="p-3 pl-4 whitespace-nowrap">
                                             <div class="font-medium text-slate-700 text-sm">${item.produto}</div>
                                         </td>
@@ -989,7 +1004,8 @@
                             writtenOff: false, 
                             feedback: null, 
                             observation: null,
-                            editedAfterCompletion: false
+                            editedAfterCompletion: false,
+                            managerMessage: null // CLEANING MANAGER COMMENTS ON REVERT
                         };
                     } else if (action === 'writeoff') {
                         samples[idx] = { 
@@ -1027,17 +1043,80 @@
                 sellerNotificationCount.classList.toggle('hidden', unread === 0);
             });
         }
+        
         sellerNotificationBtn.addEventListener('click', () => {
             sellerNotificationsList.innerHTML = sellerNotifications.length ? '' : '<p class="text-center text-gray-400 py-4">Sem notificações.</p>';
             sellerNotifications.forEach(n => {
                 const d = document.createElement('div');
                 d.className = `p-4 rounded-xl border mb-2 ${n.read ? 'bg-white' : 'bg-blue-50 border-blue-100'}`;
-                d.innerHTML = `<div class="font-bold text-sm text-slate-700">${n.managerName}</div><div class="text-sm italic my-1">"${n.replyMessage}"</div>
-                ${!n.read ? `<button class="text-xs text-blue-600 font-bold mt-2" onclick="window.openReply('${n.id}')">Responder</button>` : ''}`;
+                
+                // Creating buttons safely
+                d.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="font-bold text-sm text-slate-700">${n.managerName}</span>
+                        <div class="flex gap-2">
+                            <button class="text-gray-400 hover:text-red-500" onclick="window.deleteNotification('${n.id}')" title="Excluir Notificação">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-1">Produto: ${n.produto}</p>
+                    <div class="text-sm italic my-1 text-slate-600 bg-slate-50 p-2 rounded">"${n.replyMessage}"</div>
+                    <div class="flex justify-end gap-2 mt-2">
+                        ${!n.read ? `<button class="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded hover:bg-blue-200 font-bold" onclick="window.openReply('${n.id}')">Responder</button>` : ''}
+                        <button class="text-xs border border-blue-200 text-blue-600 px-3 py-1.5 rounded hover:bg-blue-50 flex items-center gap-1" onclick="window.goToItem('${n.pedido}', '${n.produto}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            Ver no Pedido
+                        </button>
+                    </div>
+                `;
                 sellerNotificationsList.appendChild(d);
             });
             sellerNotificationsModal.classList.remove('hidden');
         });
+
+        // --- NEW FUNCTIONS FOR NOTIFICATIONS ---
+        
+        window.deleteNotification = async (id) => {
+            if(!confirm("Deseja apagar esta notificação?")) return;
+            try {
+                await deleteDoc(doc(db, "sessoes", currentSessionId, "notificacoesVendedor", id));
+                // UI updates via snapshot listener
+            } catch(e) {
+                console.error(e);
+                alert("Erro ao apagar.");
+            }
+        };
+
+        window.goToItem = (pedido, produto) => {
+            sellerNotificationsModal.classList.add('hidden');
+            
+            // 1. Find Order Card
+            const card = document.getElementById(`order-card-${pedido}`);
+            if(card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // 2. Find specific row
+                // We use data attributes set in rendering
+                // Note: produto string matching can be tricky with special chars, try fuzzy match
+                const rows = card.querySelectorAll('tr[data-product-code]');
+                let targetRow = null;
+                
+                rows.forEach(row => {
+                    if(row.dataset.productCode === produto) targetRow = row;
+                });
+
+                if(targetRow) {
+                    // Flash effect
+                    targetRow.classList.add('highlight-flash');
+                    // Remove class after animation to allow re-trigger
+                    setTimeout(() => targetRow.classList.remove('highlight-flash'), 3000);
+                }
+            } else {
+                showAlert("Pedido não encontrado na lista atual (pode ter sido baixado ou movido).");
+            }
+        };
+
         window.openReply = (id) => {
             const n = sellerNotifications.find(x => x.id === id);
             currentNotificationForReply = n;
@@ -1078,6 +1157,7 @@
     </script>
 </body>
 </html>
+
 
 
 
